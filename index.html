@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AquaForge — Water Project Intake v2</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:#f5f5f5;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.shell{display:flex;flex-direction:column;height:100vh;background:#fff}
+.topbar{padding:10px 18px;border-bottom:1px solid #e5e7eb;background:#fff;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.brand{font-weight:600;font-size:15px;color:#185FA5;white-space:nowrap}
+.brand span{color:#6b7280;font-weight:400;font-size:13px;margin-left:6px}
+.loc-wrap{flex:1;max-width:380px;display:flex;gap:6px}
+.loc-input{flex:1;border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;font-size:13px;background:#f9fafb;color:#111}
+.loc-input:focus{outline:none;border-color:#185FA5}
+.btn-search{padding:6px 12px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;white-space:nowrap}
+.btn-search:hover{background:#0C447C}
+.loc-pill{background:#EBF5FF;color:#185FA5;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:500;white-space:nowrap}
+.progress-bar{height:3px;background:#e5e7eb;flex-shrink:0}
+.progress-fill{height:100%;background:#185FA5;transition:width .3s ease}
+.main{display:flex;flex:1;overflow:hidden}
+.left-panel{width:390px;min-width:330px;border-right:1px solid #e5e7eb;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.q-header{padding:9px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.q-header .progress{font-size:13px;font-weight:500;color:#111}
+.step-badge{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:20px;padding:3px 10px;font-size:11px;color:#6b7280}
+.q-body{flex:1;overflow-y:auto;padding:16px}
+.q-label{font-size:14px;font-weight:600;margin-bottom:5px;line-height:1.45;color:#111}
+.q-required{color:#D85A30}
+.q-help{font-size:12px;color:#6b7280;margin-bottom:12px;line-height:1.55}
+.options{display:flex;flex-direction:column;gap:5px}
+.opt{display:flex;align-items:flex-start;gap:9px;padding:8px 11px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all .12s;user-select:none}
+.opt:hover{background:#f0f7ff;border-color:#bfdbfe}
+.opt.active{background:#EBF5FF;border-color:#185FA5}
+.opt input{margin-top:2px;accent-color:#185FA5;cursor:pointer;flex-shrink:0;width:14px;height:14px;pointer-events:none}
+.opt-label{font-size:13px;line-height:1.4;color:#374151}
+.opt.active .opt-label{color:#185FA5;font-weight:500}
+textarea{width:100%;border:1px solid #d1d5db;border-radius:8px;padding:10px;font-size:13px;font-family:inherit;resize:vertical;background:#f9fafb;color:#111;min-height:120px;line-height:1.5}
+textarea:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.1)}
+.error-msg{margin-top:10px;padding:8px 12px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;color:#B91C1C;font-size:12px;display:none}
+.error-msg.visible{display:block}
+.nav{padding:12px 16px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.btn{padding:7px 18px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;transition:all .12s}
+.btn:hover:not(:disabled){background:#f9fafb}
+.btn:disabled{opacity:.35;cursor:default}
+.btn-next{background:#185FA5;color:#fff;border-color:#185FA5}
+.btn-next:hover:not(:disabled){background:#0C447C}
+.right-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#map{flex:1;z-index:1}
+.prev-panel{height:220px;border-top:1px solid #e5e7eb;overflow-y:auto;padding:12px 16px;background:#fff;flex-shrink:0}
+.prev-title{font-size:11px;font-weight:600;color:#9ca3af;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.prev-item{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f3f4f6}
+.prev-item:last-child{border-bottom:none}
+.prev-q{font-size:11px;color:#9ca3af;margin-bottom:2px}
+.prev-a{font-size:12px;color:#111;line-height:1.4;font-weight:500}
+.empty-prev{font-size:12px;color:#9ca3af;font-style:italic}
+.done-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center;flex:1;background:#fff;overflow-y:auto}
+.done-icon{font-size:52px}
+.done-title{font-size:20px;font-weight:600;color:#111}
+.done-sub{font-size:13px;color:#6b7280;max-width:380px;line-height:1.7}
+.classification{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:14px;font-size:11px;font-family:monospace;text-align:left;max-width:440px;width:100%;max-height:200px;overflow-y:auto;color:#374151;line-height:1.6;white-space:pre}
+.geocoding-spinner{font-size:11px;color:#6b7280;padding:2px 6px;display:none}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <span class="brand">AquaForge <span>Regulation Intelligence Assistant</span></span>
+    <div class="loc-wrap">
+      <input class="loc-input" id="locInput" value="Toronto, Ontario, Canada" placeholder="Enter city or address..." onkeydown="if(event.key==='Enter')geocode()"/>
+      <button class="btn-search" onclick="geocode()">🔍 Search</button>
+    </div>
+    <span class="loc-pill" id="coordPill">📍 43.6535, -79.3839</span>
+    <span class="geocoding-spinner" id="spinner">Searching…</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="main">
+    <div class="left-panel">
+      <div class="q-header">
+        <span class="progress" id="progressLabel">Question 1 of 21</span>
+        <span class="step-badge" id="stepBadge">Step 1</span>
+      </div>
+      <div class="q-body" id="qBody"></div>
+      <div class="nav">
+        <button class="btn" id="btnPrev" onclick="navigate(-1)">← Previous</button>
+        <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Next →</button>
+      </div>
+    </div>
+    <div class="right-panel">
+      <div id="map"></div>
+      <div class="prev-panel">
+        <div class="prev-title">Previous Answers</div>
+        <div id="prevAnswers"><p class="empty-prev">No previous answers yet.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── MAP SETUP ─────────────────────────────────────────────────────────────────
+const DEFAULT_LAT=43.6535, DEFAULT_LNG=-79.3839;
+const map = L.map('map').setView([DEFAULT_LAT,DEFAULT_LNG],11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap contributors',maxZoom:19
+}).addTo(map);
+
+const markerIcon = L.icon({
+  iconUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34]
+});
+
+let marker = L.marker([DEFAULT_LAT,DEFAULT_LNG],{icon:markerIcon,draggable:true})
+  .addTo(map)
+  .bindPopup('Toronto, Ontario, Canada')
+  .openPopup();
+
+marker.on('dragend',function(){
+  const ll=marker.getLatLng();
+  document.getElementById('coordPill').textContent=`📍 ${ll.lat.toFixed(4)}, ${ll.lng.toFixed(4)}`;
+  reverseGeocode(ll.lat,ll.lng);
+});
+
+map.on('click',function(e){
+  marker.setLatLng(e.latlng);
+  document.getElementById('coordPill').textContent=`📍 ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
+  reverseGeocode(e.latlng.lat,e.latlng.lng);
+});
+
+async function geocode(){
+  const q=document.getElementById('locInput').value.trim();
+  if(!q)return;
+  const sp=document.getElementById('spinner');
+  sp.style.display='inline';
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`,{headers:{'Accept-Language':'en'}});
+    const d=await r.json();
+    if(d&&d.length>0){
+      const lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon);
+      map.setView([lat,lng],12);
+      marker.setLatLng([lat,lng]).bindPopup(d[0].display_name).openPopup();
+      document.getElementById('coordPill').textContent=`📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    }else{
+      alert('Location not found. Try a different search term.');
+    }
+  }catch(e){alert('Search error. Check your internet connection.');}
+  finally{sp.style.display='none';}
+}
+
+async function reverseGeocode(lat,lng){
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,{headers:{'Accept-Language':'en'}});
+    const d=await r.json();
+    if(d&&d.display_name){
+      const short=d.address?(d.address.city||d.address.town||d.address.village||'')+(d.address.state?', '+d.address.state:'')+(d.address.country?', '+d.address.country:''):d.display_name;
+      document.getElementById('locInput').value=short;
+    }
+  }catch(e){}
+}
+
+// ── SCHEMA ────────────────────────────────────────────────────────────────────
+const SCHEMA={questions:[
+  {id:"promoter_type",type:"radio",required:true,step:"Step 1 — Characterization",writes_to:"project.promoter_type",label:"What type of organization is leading this project?",help:"The promoter type determines which regulatory regimes apply (municipal bylaws, industrial sector regulations, federal permits, etc.).",options:[
+    {id:"municipal",label:"Municipal authority / public water utility"},
+    {id:"industrial",label:"Industrial company (sector to be specified)"},
+    {id:"private_utility",label:"Private operator / concession holder"},
+    {id:"institutional",label:"Institutional facility (hospital, university, campus, military)"},
+    {id:"agricultural",label:"Agricultural operator / fish farm / livestock operation"},
+    {id:"federal_government",label:"Federal or national government agency"},
+    {id:"real_estate_developer",label:"Real estate developer"},
+    {id:"other",label:"Other (describe in the final free-text question)"}
+  ]},
+  {id:"industrial_sector",type:"multi_select",required_if:{equals:{question:"promoter_type",value:"industrial"}},step:"Step 1 — Characterization",writes_to:"project.industrial_sector",label:"What is the primary industrial sector?",help:"Sector-specific effluent regulations are conditioned on the industrial sector. Select all that apply.",options:[
+    {id:"food_beverage",label:"Food and beverage processing"},
+    {id:"pulp_paper",label:"Pulp, paper and wood products"},
+    {id:"mining_metals",label:"Mining, quarrying and metal processing"},
+    {id:"chemical_pharma",label:"Chemical and pharmaceutical manufacturing"},
+    {id:"petroleum_refining",label:"Petroleum refining and petrochemicals"},
+    {id:"textile_tannery",label:"Textile, dyeing and tannery"},
+    {id:"power_generation",label:"Power generation (thermal, nuclear, hydro)"},
+    {id:"semiconductor_electronics",label:"Semiconductor and electronics manufacturing"},
+    {id:"hospital_healthcare",label:"Hospital and healthcare (micropollutants, pharmaceuticals)"},
+    {id:"other_industrial",label:"Other industrial sector"}
+  ]},
+  {id:"project_phase",type:"radio",required:true,step:"Step 1 — Characterization",writes_to:"project.phase",label:"What phase is the project in?",help:"Select the best match. The project phase determines which permits must be obtained at this stage.",options:[
+    {id:"feasibility_predesign",label:"Feasibility study / pre-design"},
+    {id:"detailed_design",label:"Detailed engineering design"},
+    {id:"new_construction",label:"New project — construction"},
+    {id:"expansion",label:"Expansion / capacity increase"},
+    {id:"retrofit_upgrade",label:"Rehabilitation / technology upgrade"},
+    {id:"operation",label:"Operation of an existing system"},
+    {id:"decommissioning",label:"Decommissioning / closure"},
+    {id:"unknown",label:"Unknown / to be determined"}
+  ]},
+  {id:"project_capacity",type:"radio",required:true,step:"Step 1 — Characterization",writes_to:"project.capacity_range",label:"What is the nominal treatment or discharge capacity?",help:"Order-of-magnitude estimate sufficient. Thresholds determine mandatory EIA, operator certification class, and monitoring frequency.",options:[
+    {id:"micro",label:"< 10 m³/day — decentralized systems, small buildings"},
+    {id:"small",label:"10 – 500 m³/day — small communities, light industrial"},
+    {id:"medium",label:"500 – 10,000 m³/day — mid-size communities, moderate industries"},
+    {id:"large",label:"10,000 – 100,000 m³/day — large cities, heavy industries"},
+    {id:"very_large",label:"> 100,000 m³/day — major metropolitan areas, large complexes"},
+    {id:"unknown",label:"Not yet determined / to be assessed"}
+  ]},
+  {id:"water_families",type:"multi_select",required:true,step:"Step 2 — Water Scopes",writes_to:"classification.water_families",label:"Which water scopes are part of this project?",help:"Select all that apply. Each scope selected generates a dedicated follow-up question.",options:[
+    {id:"drinking_water",label:"Drinking water (production, treatment, distribution)"},
+    {id:"municipal_wastewater",label:"Municipal / sanitary wastewater"},
+    {id:"industrial_wastewater",label:"Industrial wastewater (process effluent)"},
+    {id:"stormwater",label:"Stormwater / urban runoff"},
+    {id:"groundwater",label:"Groundwater / aquifer"},
+    {id:"water_reuse",label:"Reclaimed / recycled water reuse"},
+    {id:"residuals_biosolids",label:"Residuals / sludge / biosolids"},
+    {id:"other_unsure",label:"Other / not sure — describe in the final question"}
+  ]},
+  {id:"drinking_water_subscopes",type:"multi_select",required_if:{any_selected:{question:"water_families",values:["drinking_water"]}},step:"Step 3 — Sub-scopes",writes_to:"classification.drinking_water_subscopes",label:"What drinking water scopes apply?",help:"Select all that apply.",options:[
+    {id:"drinking_water_treatment",label:"Drinking water treatment plant (DWTP)"},
+    {id:"drinking_water_distribution",label:"Distribution network (pipes, storage tanks, pumping stations)"},
+    {id:"source_water_intake",label:"Raw water intake / abstraction point"},
+    {id:"private_well_supply",label:"Private well supply (individual or small cluster)"},
+    {id:"desalination",label:"Desalination (seawater or brackish water)"}
+  ]},
+  {id:"municipal_wastewater_subscopes",type:"multi_select",required_if:{any_selected:{question:"water_families",values:["municipal_wastewater"]}},step:"Step 3 — Sub-scopes",writes_to:"classification.municipal_wastewater_subscopes",label:"What municipal wastewater scopes apply?",help:"Select all relevant combinations of wastewater source (Axis A) and treatment / discharge pathway (Axis B).",options:[
+    {id:"domestic_residential",label:"Domestic / residential / institutional wastewater"},
+    {id:"combined_sewer_overflow",label:"Combined sewer overflow (CSO)"},
+    {id:"hospital_wastewater",label:"Hospital / healthcare wastewater (micropollutants, pharmaceuticals)"},
+    {id:"centralized_wwtp",label:"Centralized municipal wastewater treatment plant (WWTP)"},
+    {id:"pretreatment_to_sewer",label:"Industrial pretreatment before discharge to municipal sewer"},
+    {id:"decentralized_onsite",label:"Decentralized / on-site treatment (septic, package plant, wetland)"},
+    {id:"land_application",label:"Land application of treated effluent or biosolids"},
+    {id:"direct_environmental_discharge",label:"Direct discharge to a natural receiving environment"}
+  ]},
+  {id:"industrial_wastewater_subscopes",type:"multi_select",required_if:{any_selected:{question:"water_families",values:["industrial_wastewater"]}},step:"Step 3 — Sub-scopes",writes_to:"classification.industrial_wastewater_subscopes",label:"What industrial wastewater scopes apply?",help:"Select all that apply.",options:[
+    {id:"process_effluent_direct_discharge",label:"Process effluent discharged directly to surface water"},
+    {id:"process_effluent_to_sewer",label:"Process effluent to municipal sewer (pretreatment required)"},
+    {id:"cooling_water_blowdown",label:"Cooling water / blowdown (cooling towers, once-through)"},
+    {id:"landfill_leachate",label:"Landfill leachate / contaminated site leachate"},
+    {id:"agricultural_runoff_return",label:"Agricultural runoff / irrigation return flows"},
+    {id:"aquaculture_effluent",label:"Aquaculture / fish farm effluent"}
+  ]},
+  {id:"stormwater_subscopes",type:"multi_select",required_if:{any_selected:{question:"water_families",values:["stormwater"]}},step:"Step 3 — Sub-scopes",writes_to:"classification.stormwater_subscopes",label:"What stormwater scopes apply?",help:"Select all that apply.",options:[
+    {id:"urban_stormwater_management",label:"Urban stormwater management (retention basins, green infrastructure)"},
+    {id:"construction_site_runoff",label:"Construction site runoff (sediment and erosion control)"},
+    {id:"agricultural_stormwater",label:"Agricultural stormwater (concentrated animal feeding operations)"},
+    {id:"industrial_site_stormwater",label:"Industrial site stormwater (contaminated runoff, spill prevention)"}
+  ]},
+  {id:"groundwater_subscopes",type:"multi_select",required_if:{any_selected:{question:"water_families",values:["groundwater"]}},step:"Step 3 — Sub-scopes",writes_to:"classification.groundwater_subscopes",label:"What groundwater scopes apply?",help:"Select all that apply.",options:[
+    {id:"groundwater_extraction_well",label:"Groundwater extraction / production well"},
+    {id:"managed_aquifer_recharge",label:"Managed aquifer recharge (intentional infiltration)"},
+    {id:"groundwater_remediation",label:"Groundwater remediation / aquifer cleanup"},
+    {id:"dewatering_excavation",label:"Groundwater dewatering (construction, mining, excavation)"},
+    {id:"injection_well",label:"Injection well (membrane concentrate, brine, treated effluent)"}
+  ]},
+  {id:"water_reuse_subscopes",type:"multi_select",required_if:{any_selected:{question:"water_families",values:["water_reuse"]}},step:"Step 3 — Sub-scopes",writes_to:"classification.water_reuse_subscopes",label:"What water reuse scopes apply?",help:"Select all that apply.",options:[
+    {id:"indirect_potable_reuse",label:"Indirect potable reuse (aquifer recharge or reservoir augmentation)"},
+    {id:"direct_potable_reuse",label:"Direct potable reuse (injected into drinking water system)"},
+    {id:"non_potable_irrigation",label:"Non-potable reuse — agricultural or landscape irrigation"},
+    {id:"non_potable_industrial",label:"Non-potable reuse — industrial process water"},
+    {id:"non_potable_urban",label:"Non-potable reuse — urban uses (toilet flushing, street washing)"}
+  ]},
+  {id:"residuals_subscopes",type:"multi_select",required_if:{any_selected:{question:"water_families",values:["residuals_biosolids"]}},step:"Step 3 — Sub-scopes",writes_to:"classification.residuals_subscopes",label:"What residuals / biosolids scopes apply?",help:"Select all that apply.",options:[
+    {id:"biosolids_land_application",label:"Agricultural land application of biosolids"},
+    {id:"biosolids_landfill",label:"Biosolids / sludge landfill disposal"},
+    {id:"thermal_drying_incineration",label:"Thermal drying / incineration / co-incineration"},
+    {id:"sludge_composting",label:"Sludge composting / anaerobic digestion with biogas recovery"},
+    {id:"spent_filter_media_resin",label:"Spent filter media / exhausted resins (GAC, sand, IX)"}
+  ]},
+  {id:"water_source_type",type:"multi_select",required:true,step:"Step 4 — Source & Receiving Env.",writes_to:"project.water_source",label:"What is the nature of the raw water source?",help:"Select all sources that will be collected, abstracted, or used by the project.",options:[
+    {id:"river_stream",label:"River / stream (flowing surface water)"},
+    {id:"lake_reservoir",label:"Lake / reservoir (standing surface water)"},
+    {id:"large_lake_system",label:"Large lake system (Great Lakes, Lake Geneva, Caspian Sea...)"},
+    {id:"ocean_coastal",label:"Ocean / coastal / estuarine water"},
+    {id:"confined_aquifer",label:"Confined aquifer (artesian groundwater)"},
+    {id:"unconfined_aquifer",label:"Unconfined aquifer / water table"},
+    {id:"municipal_supply",label:"Pre-treated municipal water supply (utility feed)"},
+    {id:"rainwater_harvesting",label:"Rainwater harvesting / rooftop collection"},
+    {id:"no_water_intake",label:"No water intake — discharge or treatment project only"}
+  ]},
+  {id:"discharge_type",type:"multi_select",required:true,step:"Step 4 — Source & Receiving Env.",writes_to:"classification.discharge_type",label:"What type of discharge does this project involve?",help:"PRIMARY REGULATORY VARIABLE. Direct discharge → environmental quality standards & effluent permits. Indirect → municipal pretreatment requirements.",options:[
+    {id:"direct_surface_water",label:"Direct discharge to surface water (river, lake, ocean, estuary)"},
+    {id:"direct_groundwater",label:"Direct discharge to groundwater (injection well, infiltration basin)"},
+    {id:"indirect_sanitary_sewer",label:"Indirect discharge — municipal sanitary sewer"},
+    {id:"indirect_storm_sewer",label:"Indirect discharge — municipal storm sewer / combined sewer"},
+    {id:"land_application",label:"Land application (irrigation, biosolids spreading, soil aquifer treatment)"},
+    {id:"reuse_on_site",label:"On-site reuse — no external discharge"},
+    {id:"hauled_offsite_treatment",label:"Collected and hauled to approved off-site treatment facility"},
+    {id:"no_discharge_closed_loop",label:"No discharge — fully closed-loop / zero liquid discharge"},
+    {id:"unknown_to_determine",label:"Unknown / to be determined"}
+  ]},
+  {id:"receiving_environment_type",type:"multi_select",required_if:{any_selected:{question:"discharge_type",values:["direct_surface_water","direct_groundwater"]}},step:"Step 4 — Source & Receiving Env.",writes_to:"project.receiving_environment.type",label:"What is the nature of the receiving environment?",help:"Select all receiving environments that will receive effluent or any discharge from this project.",options:[
+    {id:"perennial_river_stream",label:"Perennial river / stream (permanent flow)"},
+    {id:"intermittent_seasonal_stream",label:"Intermittent / seasonal stream (ephemeral flow)"},
+    {id:"natural_lake",label:"Natural lake"},
+    {id:"large_lake_system",label:"Large lake system / internationally shared water body"},
+    {id:"drinking_water_reservoir",label:"Reservoir serving a downstream drinking water supply"},
+    {id:"coastal_marine_estuarine",label:"Coastal / marine / estuarine water body"},
+    {id:"wetland_marsh_bog",label:"Wetland / marsh / bog / fen"},
+    {id:"groundwater_aquifer",label:"Groundwater / aquifer (via injection or infiltration)"}
+  ]},
+  {id:"downstream_drinking_water_intake",type:"radio",required_if:{any_selected:{question:"discharge_type",values:["direct_surface_water"]}},step:"Step 4 — Source & Receiving Env.",writes_to:"project.receiving_environment.downstream_intake",label:"Is there a drinking water intake downstream of the discharge point?",help:"A downstream intake increases treatment requirements and may trigger source water protection obligations.",options:[
+    {id:"yes_confirmed",label:"Yes — confirmed downstream drinking water intake"},
+    {id:"yes_suspected",label:"Probable but not confirmed"},
+    {id:"no",label:"No downstream drinking water intake identified"},
+    {id:"unknown",label:"Unknown"}
+  ]},
+  {id:"sensitive_zones",type:"multi_select",required:true,step:"Step 4 — Source & Receiving Env.",writes_to:"project.sensitive_zones",label:"Are any protected or environmentally sensitive zones affected?",help:"Select all that apply. The regAssist engine identifies applicable legal instruments in your jurisdiction.",options:[
+    {id:"drinking_water_source_protection_area",label:"Drinking water source protection zone / wellhead protection area"},
+    {id:"protected_biodiversity_habitat",label:"Legally protected biodiversity / natural habitat zone"},
+    {id:"fish_aquatic_habitat",label:"Critical fish or aquatic species habitat"},
+    {id:"wetland_protected",label:"Protected wetland / marsh / bog"},
+    {id:"drinking_water_watershed",label:"Drinking water supply watershed / catchment area"},
+    {id:"floodplain_flood_risk_zone",label:"Floodplain / designated flood risk zone"},
+    {id:"transboundary_shared_water_body",label:"Transboundary or internationally shared water body"},
+    {id:"indigenous_traditional_territory",label:"Indigenous / First Nations traditional territory (duty to consult)"},
+    {id:"none_identified",label:"No sensitive or protected zones identified"},
+    {id:"unknown",label:"Unknown / requires verification"}
+  ]},
+  {id:"water_streams",type:"multi_select",required:true,step:"Step 5 — Streams & Activities",writes_to:"classification.water_streams",label:"What water streams are involved in this project?",help:"Select all streams that will be collected, treated, discharged, reused, stored, or monitored.",options:[
+    {id:"raw_water",label:"Raw water (surface or groundwater before any treatment)"},
+    {id:"raw_wastewater",label:"Raw wastewater (WWTP influent)"},
+    {id:"industrial_process_water",label:"Industrial process water (incoming)"},
+    {id:"filter_backwash_water",label:"Filter backwash water (rapid sand filters, UF, membrane backwash)"},
+    {id:"membrane_concentrate_ro_reject",label:"Membrane concentrate / RO reject / NF brine"},
+    {id:"recycled_process_water",label:"Recycled / recirculated process water (returned to head of plant)"},
+    {id:"disinfection_byproduct_streams",label:"Disinfection by-product streams (THM, HAA, chloramine purges)"},
+    {id:"cooling_water",label:"Cooling water (circulating or once-through)"},
+    {id:"treated_drinking_water",label:"Treated drinking water (finished water — potable standards)"},
+    {id:"treated_wastewater_effluent",label:"Treated wastewater effluent (final effluent before discharge/reuse)"},
+    {id:"sludge_biosolids",label:"Sludge / biosolids (treatment residuals)"},
+    {id:"spent_filter_media_resin",label:"Spent filter media / exhausted resins (GAC, sand, IX)"},
+    {id:"stormwater_site_runoff",label:"Stormwater / site runoff (from the project facility)"},
+    {id:"leachate",label:"Leachate (landfill, contaminated site, or sludge lagoon)"}
+  ]},
+  {id:"project_activities",type:"multi_select",required:true,step:"Step 5 — Streams & Activities",writes_to:"classification.project_activities",label:"What activities are part of this project?",help:"Select all activities that will be carried out. Listed in logical treatment chain order.",options:[
+    {id:"water_abstraction_withdrawal",label:"Water abstraction / withdrawal (intake pumping, well extraction)"},
+    {id:"pretreatment",label:"Pretreatment (screening, grit removal, oil-grease separation, equalization)"},
+    {id:"treatment",label:"Primary or secondary treatment (conventional water or wastewater)"},
+    {id:"advanced_treatment",label:"Advanced treatment (ozonation, GAC, UV, membranes, AOPs)"},
+    {id:"storage",label:"Storage (clearwells, balancing tanks, effluent storage lagoons)"},
+    {id:"collection_conveyance",label:"Collection and conveyance (sewer network, pipelines, pumping stations)"},
+    {id:"discharge",label:"Discharge / release (effluent to receiving environment or sewer)"},
+    {id:"reuse",label:"Water reuse (reclaimed water supply, on-site or off-site)"},
+    {id:"residuals_management",label:"Residuals management (sludge handling, dewatering, disposal)"},
+    {id:"monitoring_reporting",label:"Monitoring and regulatory reporting (self-monitoring, compliance)"}
+  ]},
+  {id:"groundwater_impact",type:"multi_select",required:true,step:"Step 5 — Streams & Activities",writes_to:"classification.groundwater_impact",label:"Could this project affect groundwater or an aquifer?",help:"Confirm all groundwater pathways relevant to this project. Select all that apply.",options:[
+    {id:"groundwater_withdrawal_well",label:"Yes — groundwater withdrawal or production well"},
+    {id:"infiltration_recharge",label:"Yes — planned or potential infiltration / aquifer recharge"},
+    {id:"onsite_septic_subsurface",label:"Yes — on-site septic system or subsurface dispersal"},
+    {id:"land_application_leaching",label:"Yes — land application with leaching / percolation potential"},
+    {id:"dewatering_remediation",label:"Yes — groundwater dewatering or aquifer remediation"},
+    {id:"leachate_residuals_risk",label:"Yes — residuals or leachate may affect groundwater quality"},
+    {id:"no_groundwater_impact",label:"No — no groundwater impact identified"}
+  ]},
+  {id:"project_free_description",type:"text_area",required:false,step:"Step 5 — Streams & Activities",writes_to:"project.free_description",label:"Briefly describe anything important about the project.",help:"Optional but recommended.",placeholder:"E.g. Food processing facility with process wastewater pretreatment, cooling water discharge, stormwater controls, and sludge management. Key concern: PFAS in groundwater. Capacity ~2,500 m³/day. Pre-design phase."}
+]};
+
+// ── ENGINE ────────────────────────────────────────────────────────────────────
+let answers={}, currentIdx=0;
+
+function isVisible(q){
+  const c=q.required_if; if(!c)return true;
+  if(c.any_selected){const s=answers[c.any_selected.question]||[];return c.any_selected.values.some(v=>(Array.isArray(s)?s:[s]).includes(v));}
+  if(c.equals)return answers[c.equals.question]===c.equals.value;
+  if(c.all_selected){const s=answers[c.all_selected.question]||[];return c.all_selected.values.every(v=>s.includes(v));}
+  if(c.none_selected){const s=answers[c.none_selected.question]||[];return!c.none_selected.values.some(v=>s.includes(v));}
+  return true;
+}
+
+function visibleQ(){return SCHEMA.questions.filter(isVisible);}
+
+// ── VALIDATION ────────────────────────────────────────────────────────────────
+function validate(q){
+  // Optional questions always pass
+  if(q.required===false)return null;
+  // Questions with required_if: required only when visible (already filtered)
+  const v=answers[q.id];
+  if(q.type==='text_area')return null; // text_area is always optional
+  if(q.type==='multi_select'){
+    if(!v||v.length===0)return'Please select at least one option to continue.';
+  }else if(q.type==='radio'){
+    if(!v)return'Please select one option to continue.';
+  }
+  return null;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function getDisplay(q){
+  const v=answers[q.id];
+  if(!v||(Array.isArray(v)&&v.length===0))return null;
+  if(q.type==='text_area')return v.length>90?v.substring(0,90)+'…':v;
+  if(Array.isArray(v))return v.map(id=>q.options?.find(o=>o.id===id)?.label||id).join(', ');
+  return q.options?.find(o=>o.id===v)?.label||v;
+}
+
+function render(){
+  const vis=visibleQ(), total=vis.length;
+  if(currentIdx>=total){showDone();return;}
+  const q=vis[currentIdx];
+
+  document.getElementById('progressLabel').textContent=`Question ${currentIdx+1} of ${total}`;
+  document.getElementById('stepBadge').textContent=q.step||'';
+  document.getElementById('progressFill').style.width=Math.round((currentIdx/total)*100)+'%';
+
+  const isReq=q.required!==false&&q.type!=='text_area';
+  let html=`<div class="q-label">${q.label}${isReq?'<span class="q-required"> *</span>':''}</div>`;
+  if(q.help)html+=`<p class="q-help">${q.help}</p>`;
+
+  if(q.type==='text_area'){
+    html+=`<textarea id="taInput" placeholder="${q.placeholder||''}" oninput="answers['${q.id}']=this.value">${answers[q.id]||''}</textarea>`;
+  }else{
+    const val=answers[q.id]||(q.type==='multi_select'?[]:null);
+    html+='<div class="options">';
+    for(const opt of q.options){
+      const isMulti=q.type==='multi_select';
+      const chk=isMulti?(val||[]).includes(opt.id):val===opt.id;
+      html+=`<label class="opt${chk?' active':''}" onclick="handleChange('${q.id}','${opt.id}',${isMulti},event)">
+        <input type="${isMulti?'checkbox':'radio'}" name="${q.id}" value="${opt.id}"${chk?' checked':''}><span class="opt-label">${opt.label}</span>
+      </label>`;
+    }
+    html+='</div>';
+  }
+  html+=`<div class="error-msg" id="errMsg"></div>`;
+
+  document.getElementById('qBody').innerHTML=html;
+  document.getElementById('btnPrev').disabled=currentIdx===0;
+  document.getElementById('btnNext').textContent=currentIdx===total-1?'Submit ✓':'Next →';
+  renderPrev();
+}
+
+function handleChange(qId,optId,isMulti,e){
+  e.preventDefault();
+  if(isMulti){let a=answers[qId]||[];answers[qId]=a.includes(optId)?a.filter(v=>v!==optId):[...a,optId];}
+  else answers[qId]=optId;
+  // Clear error on change
+  const err=document.getElementById('errMsg');
+  if(err){err.classList.remove('visible');err.textContent='';}
+  render();
+}
+
+function renderPrev(){
+  const vis=visibleQ(), past=vis.slice(0,currentIdx).filter(q=>getDisplay(q));
+  const el=document.getElementById('prevAnswers');
+  if(!el)return;
+  if(past.length===0){el.innerHTML='<p class="empty-prev">No previous answers yet.</p>';return;}
+  el.innerHTML=past.map(q=>`<div class="prev-item"><div class="prev-q">${q.label}</div><div class="prev-a">${getDisplay(q)}</div></div>`).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+function navigate(dir){
+  const vis=visibleQ();
+  if(dir===1){
+    // Validate current question before moving forward
+    const q=vis[currentIdx];
+    const err=validate(q);
+    if(err){
+      const el=document.getElementById('errMsg');
+      if(el){el.textContent='⚠ '+err;el.classList.add('visible');}
+      return; // Block navigation
+    }
+    if(currentIdx>=vis.length-1){showDone();return;}
+  }
+  currentIdx=Math.max(0,Math.min(vis.length-1,currentIdx+dir));
+  render();
+}
+
+function buildClassification(){
+  const r={};
+  for(const q of SCHEMA.questions){
+    const v=answers[q.id];
+    if(v===undefined||v===''||(Array.isArray(v)&&v.length===0))continue;
+    const parts=(q.writes_to||'').split('.');if(!parts[0])continue;
+    let node=r;
+    for(let i=0;i<parts.length-1;i++)node=node[parts[i]]=node[parts[i]]||{};
+    node[parts[parts.length-1]]=v;
+  }
+  return r;
+}
+
+function showDone(){
+  const cls=buildClassification();
+  document.querySelector('.left-panel').innerHTML=`
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center;flex:1">
+      <div style="font-size:48px">✅</div>
+      <div style="font-size:18px;font-weight:600;color:#111">Intake complete</div>
+      <div style="font-size:13px;color:#6b7280;line-height:1.7">Your project has been submitted.<br>The regAssist engine is mapping applicable regulations.</div>
+      <button class="btn btn-next" onclick="location.reload()" style="margin-top:8px">← Start over</button>
+    </div>`;
+  document.querySelector('.prev-panel').innerHTML=`
+    <div class="prev-title">Classification object</div>
+    <pre style="font-size:11px;font-family:monospace;color:#374151;line-height:1.6;overflow-y:auto;max-height:160px">${JSON.stringify(cls,null,2)}</pre>`;
+}
+
+render();
+</script>
+</body>
+</html>
