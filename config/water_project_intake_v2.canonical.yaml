@@ -39,6 +39,16 @@ question_types:
   - text
   - text_area
 
+# ── STEP 0 LOCATION BEHAVIOR (BUG-11) ───────────────────────────────────────
+# Location is a SOFT START (non-blocking) but a HARD BLOCK at submission.
+# - User may proceed through all questions without confirming location.
+# - Submit is blocked until project.location.confirmed = true.
+# - Confirmed when: user clicks Confirm Location button, performs a geocoding
+#   search and accepts the result, or manually moves the map marker.
+# - writes_to: project.location.confirmed, project.location.name,
+#              project.location.coordinates
+# ─────────────────────────────────────────────────────────────────────────────
+
 # ── RENDERING NOTES FOR FRONTEND ─────────────────────────────────────────────
 # Q17 (water_streams) and Q18 (project_activities) require dynamic option
 # filtering based on answers to water_families, discharge_type, and

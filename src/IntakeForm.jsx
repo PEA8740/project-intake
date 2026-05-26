@@ -427,7 +427,13 @@ function CompletionScreen({ result, onRestart }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function IntakeForm({ lang = DEFAULT_LANG, onComplete }) {
+export default function IntakeForm({
+  lang = DEFAULT_LANG,
+  onComplete,
+  // BUG-11: location confirmation passed from parent map component
+  locationConfirmed = false,
+  locationData = null,   // { name, lat, lng }
+}) {
   const [schema,       setSchema]       = useState(null);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState(null);
@@ -510,12 +516,20 @@ export default function IntakeForm({ lang = DEFAULT_LANG, onComplete }) {
 
   // Submit handler
   const handleSubmit = async () => {
+    // BUG-11: block submission if location not confirmed
+    if (!locationConfirmed) {
+      setError(
+        "Please confirm the project location before submitting. " +
+        "Enter a city or coordinates in the map panel and click Confirm location."
+      );
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch(`${API_BASE}/intake/submit`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ answers, lang }),
+        body:    JSON.stringify({ answers, lang, location: locationData }),
       });
       if (!res.ok) throw new Error(`Submit error ${res.status}`);
       const data = await res.json();

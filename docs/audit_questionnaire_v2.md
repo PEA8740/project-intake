@@ -1,19 +1,19 @@
-# Audit complet — AquaForge Intake Questionnaire v2
+# Questionnaire Audit Report — AquaForge Intake v2
 # Date: 2026-05-25
-# Méthode: simulation de 6 profils de projets réels
+# Method: Simulation of 6 real project profiles
 
 ---
 
-## PROFILS TESTÉS
+## TESTED PROFILES
 
-| ID | Profil | Secteur | Discharge type |
-|----|--------|---------|----------------|
-| P1 | Restaurant avec séparateur de graisses | Institutional/Food service | Indirect — sanitary sewer |
-| P2 | STEP municipale nouvelle construction | Municipal | Direct — surface water |
-| P3 | Usine eau potable (UPEP) | Municipal | No discharge / closed loop partiel |
-| P4 | Raffinerie pétrolière | Industrial | Direct + Indirect (mixte) |
-| P5 | Système septique décentralisé (rural) | Agricultural | Land application |
-| P6 | Réutilisation potable directe | Private utility | Reuse on-site |
+| ID | Profile | Sector | Discharge type |
+|----|---------|--------|----------------|
+| P1 | Restaurant with grease trap / pretreatment | Institutional / Food service | Indirect — sanitary sewer |
+| P2 | New municipal WWTP construction | Municipal | Direct — surface water |
+| P3 | Drinking water treatment plant (DWTP) | Municipal | No discharge / partial closed loop |
+| P4 | Petroleum refinery | Industrial | Direct + Indirect (mixed) |
+| P5 | Decentralized septic system (rural) | Agricultural | Land application |
+| P6 | Direct potable reuse system | Private utility | Reuse on-site |
 
 ---
 
@@ -21,272 +21,344 @@
 
 ---
 
-### BUG-01 — Q17 Water streams : options non filtrées selon discharge type
-**Sévérité : CRITIQUE**
-**Profils affectés : P1, P3, P5, P6**
+### BUG-01 — Q17 Water streams: options not filtered by discharge type
+**Severity: CRITICAL**
+**Affected profiles: P1, P3, P5, P6**
 
-**Problème :**
-La question Q17 "What water streams are involved?" présente TOUTES les options
-à tous les projets, sans tenir compte du type de rejet sélectionné en Q13.
+**Problem:**
+Q17 "What water streams are involved?" displays ALL options to ALL projects,
+regardless of the discharge type selected in Q13.
 
-**Cas concrets :**
+**Concrete cases:**
 
-P1 (restaurant → égout) :
-- Voit "Raw wastewater (WWTP influent)" → INCORRECT
-  Un restaurant n'opère pas une STEP. Son flux entrant est "process wastewater",
-  pas "WWTP influent".
-- Voit "Treated wastewater effluent (final effluent)" → INCORRECT
-  Il n'y a pas d'effluent final — le rejet va à l'égout, pas au milieu naturel.
-- Voit "Membrane concentrate / RO reject" → HORS SCOPE
-  Aucun système membranaire dans un restaurant standard.
+P1 (restaurant → sanitary sewer):
+- Sees "Raw wastewater (WWTP influent)" → INCORRECT
+  A restaurant does not operate a WWTP. Its incoming stream is "process
+  wastewater" (kitchen effluent), not "WWTP influent."
+- Sees "Treated wastewater effluent (final effluent)" → INCORRECT
+  There is no treated effluent — the discharge goes to the sewer,
+  not to a natural receiving environment.
+- Sees "Membrane concentrate / RO reject" → OUT OF SCOPE
+  No membrane system in a standard restaurant.
 
-P3 (UPEP — pas de rejet direct) :
-- Voit "Raw wastewater (WWTP influent)" → INCORRECT
-  Une UPEP traite de l'eau brute, pas des eaux usées.
-- Voit "Treated wastewater effluent" → INCORRECT
-  Une UPEP produit de l'eau potable, pas un effluent de STEP.
+P3 (DWTP — no wastewater discharge):
+- Sees "Raw wastewater (WWTP influent)" → INCORRECT
+  A DWTP treats raw water, not wastewater.
+- Sees "Treated wastewater effluent" → INCORRECT
+  A DWTP produces drinking water, not a WWTP effluent.
 
-P5 (septique — land application) :
-- Voit "Membrane concentrate / RO reject" → HORS SCOPE
-- Voit "Disinfection by-product streams" → peu probable pour système rural
+P5 (septic — land application):
+- Sees "Membrane concentrate / RO reject" → OUT OF SCOPE
+- Sees "Disinfection by-product streams" → unlikely for rural septic system
 
-**Correction requise :**
-Ajouter des conditions required_if sur les options de Q17 basées sur
-la combinaison (water_families + discharge_type). Ou restructurer Q17
-en sous-questions par scope (comme STEP 3).
+**Required fix:**
+Add dynamic filtering of Q17 options based on the combination of
+(water_families + discharge_type). Options must be shown only when
+consistent with the project scope and discharge pathway.
 
----
-
-### BUG-02 — Q18 Project activities : options non filtrées selon scope
-**Sévérité : CRITIQUE**
-**Profils affectés : P1, P3, P5**
-
-**Problème :**
-Q18 "What activities are part of this project?" présente toutes les activités
-sans filtrage selon le scope eau sélectionné en Q4.
-
-**Cas concrets :**
-
-P1 (restaurant → égout) :
-- Voit "Water abstraction / withdrawal" → INCORRECT
-  Un restaurant ne capte pas d'eau brute — il est sur le réseau municipal.
-- Voit "Treatment" → AMBIGU
-  Le "prétraitement" (séparateur de graisses) n'est PAS un traitement
-  au sens réglementaire. La distinction pretreatment vs treatment est critique.
-- Voit "Discharge" → INCORRECT dans ce sens
-  Le rejet va à l'égout, pas au milieu naturel. Le terme "discharge" implique
-  un rejet environnemental dans le vocabulaire réglementaire.
-- Voit "Reuse" → HORS SCOPE pour un restaurant standard.
-
-P3 (UPEP) :
-- Voit "Collection and conveyance (sewer network)" → INCORRECT
-  Une UPEP n'opère pas un réseau d'égouts.
-- Voit "Residuals management" → CORRECT seulement si boues de filtre
-  présentes, mais pas toujours applicable.
-
-**Correction requise :**
-Filtrer Q18 selon water_families + discharge_type + project_activities
-déjà sélectionnées. Séparer "pretreatment" de "treatment" avec des
-libellés plus précis.
+**Filtering rules:**
+- raw_wastewater → show only if municipal_wastewater OR industrial_wastewater selected
+- treated_wastewater_effluent → show only if (municipal_wastewater OR industrial_wastewater)
+  AND direct discharge or reuse selected
+- membrane_concentrate_ro_reject → show only if drinking_water OR water_reuse
+  OR industrial_wastewater selected
+- filter_backwash_water → show only if drinking_water OR municipal_wastewater selected
+- disinfection_byproduct_streams → show only if drinking_water OR municipal_wastewater
+- industrial_process_water → show only if industrial_wastewater selected
+- cooling_water → show only if industrial_wastewater selected OR power_generation sector
 
 ---
 
-### BUG-03 — Q13 Discharge type : libellé "Discharge" ambigu pour rejet indirect
-**Sévérité : MAJEURE**
-**Profils affectés : P1, P4, P5**
+### BUG-02 — Q18 Project activities: options not filtered by scope
+**Severity: CRITICAL**
+**Affected profiles: P1, P3, P5**
 
-**Problème :**
-Dans Q18 (activités), l'option "Discharge / release (effluent to receiving
-environment or sewer)" mélange deux réalités réglementaires opposées :
-- Rejet au milieu naturel → déclenche permis d'effluent environnemental
-- Rejet à l'égout → déclenche règlement de prétraitement municipal
+**Problem:**
+Q18 "What activities are part of this project?" displays all activities
+without filtering based on the water scope selected in Q4 or the
+water source selected in Q12.
 
-Ces deux réalités ne doivent PAS être dans la même option.
+**Concrete cases:**
 
-**Correction requise :**
-Scinder en deux options distinctes :
-- "Environmental discharge" (rejet milieu naturel)
-- "Sewer connection / indirect discharge" (raccordement égout)
+P1 (restaurant → sewer, fed by municipal supply):
+- Sees "Water abstraction / withdrawal" → INCORRECT
+  A restaurant does not abstract raw water — it is supplied by the
+  municipal distribution network.
+- Sees "Treatment" → AMBIGUOUS
+  The grease trap is pretreatment, not treatment in the regulatory sense.
+  The distinction is critical for permit classification.
+- Sees "Discharge" → MISLEADING
+  The effluent goes to the sewer, not to a receiving environment.
+  "Discharge" in regulatory vocabulary implies environmental release.
+- Sees "Collection and conveyance (sewer network)" → INCORRECT
+  The restaurant connects TO the sewer — it does not OPERATE a sewer network.
+- Sees "Reuse" → OUT OF SCOPE for a standard restaurant.
 
----
+P3 (DWTP):
+- Sees "Collection and conveyance (sewer network)" → INCORRECT
+  A DWTP does not operate a wastewater sewer network.
 
-### BUG-04 — Q4 Water families : "Industrial wastewater" absent pour P1
-**Sévérité : MAJEURE**
-**Profils affectés : P1**
+**Required fix:**
+Filter Q18 options based on:
+1. water_source_type: if municipal_supply only → hide water_abstraction_withdrawal
+2. discharge_type: if indirect_sanitary_sewer only → hide discharge (environmental),
+   relabel or hide collection_conveyance
+3. water_families: if no municipal/industrial WW → hide collection_conveyance
 
-**Problème :**
-Un restaurant est classé "institutional" en Q1 (promoter type), mais ses
-eaux de cuisine sont des eaux usées industrielles au sens réglementaire
-(effluents avec graisses, DCO élevée, solides en suspension).
-
-Le questionnaire ne guide pas l'utilisateur vers "industrial_wastewater"
-pour un établissement de restauration. Il pourrait cocher uniquement
-"municipal_wastewater" ce qui est INCORRECT réglementairement —
-les règlements de prétraitement FSE (Food Service Establishment)
-sont distincts des règlements EU municipaux standards.
-
-**Correction requise :**
-Ajouter un sous-scope spécifique dans municipal_wastewater_subscopes :
-"Food service / commercial kitchen (grease, FOG)" avec ontology_refs
-pointant vers les règlements FSE / intercepteur de graisses.
-Ou ajouter une note d'aide contextuelle pour les établissements institutionnels.
-
----
-
-### BUG-05 — Q15 Downstream intake : non posée pour rejet indirect à l'égout
-**Sévérité : MAJEURE**
-**Profils affectés : P1, P4 (rejet partiel indirect)**
-
-**Problème :**
-Q15 "Is there a downstream drinking water intake?" est conditionnelle
-uniquement sur "direct_surface_water". Elle n'est pas posée pour les
-rejets indirects.
-
-Or, dans le cas d'un rejet indirect, la STEP municipale en aval peut
-elle-même rejeter dans un cours d'eau avec une prise d'eau potable en aval.
-Cette information est réglementairement pertinente pour certaines
-juridictions (ex. Ontario Source Protection Plans).
-
-**Correction requise :**
-La question downstream_intake devrait aussi être posée (avec un libellé
-adapté) quand l'utilisateur sélectionne indirect_sanitary_sewer,
-en précisant : "La STEP municipale réceptrice décharge-t-elle dans
-un cours d'eau avec prise d'eau potable en aval ?"
+**Filtering rules:**
+- water_abstraction_withdrawal → hide if source = municipal_supply only
+  (no raw water abstraction needed)
+- collection_conveyance → show only if promoter operates network
+  (municipal_wastewater + centralized_wwtp selected, OR drinking_water_distribution)
+- discharge → split into:
+  (a) Environmental discharge → show only if direct_surface_water or direct_groundwater
+  (b) Sewer connection discharge → show only if indirect_sanitary_sewer or indirect_storm_sewer
+- reuse → show only if water_reuse in water_families
 
 ---
 
-### BUG-06 — Q3 Project capacity : unité m³/jour inadaptée pour certains projets
-**Sévérité : MINEURE**
-**Profils affectés : P1, P5**
+### BUG-03 — "Discharge" terminology ambiguous: direct vs indirect conflated
+**Severity: MAJOR**
+**Affected profiles: P1, P4, P5**
 
-**Problème :**
-Un restaurant produit typiquement 1–5 m³/jour d'eaux grasses.
-La catégorie "micro (< 10 m³/day)" est correcte, mais l'unité m³/jour
-n'est pas intuitive pour un restaurateur ou un ingénieur travaillant
-sur des petits systèmes — qui pensent en L/jour ou en équivalents-habitants.
+**Problem:**
+In Q18 (activities), the option "Discharge / release (effluent to receiving
+environment or sewer)" conflates two regulatory opposites:
+- Environmental discharge → triggers effluent quality standards and
+  environmental permits (national/federal law)
+- Sewer discharge → triggers municipal pretreatment program requirements
+  (sewer use bylaws)
 
-Pour P5 (septique rural), la capacité est souvent exprimée en
-"équivalents-habitants" (EH) ou "population équivalente" (PE),
-pas en m³/jour.
+These two realities must NOT share the same option.
 
-**Correction suggérée :**
-Ajouter entre parenthèses les équivalences : "(< 10 m³/day ≈ < 100 PE)"
-pour aider les non-spécialistes.
-
----
-
-### BUG-07 — Q16 Sensitive zones : non conditionnelle mais toujours affichée
-**Sévérité : MINEURE**
-**Profils affectés : P1**
-
-**Problème :**
-Q16 "Sensitive zones" est required:true et toujours visible pour tous
-les projets, y compris un restaurant urbain raccordé à l'égout.
-Pour un tel projet, la question des zones sensibles est peu pertinente
-et alourdit inutilement le parcours.
-
-**Correction suggérée :**
-Rendre Q16 conditionnelle :
-- Toujours posée si discharge_type inclut direct_surface_water,
-  direct_groundwater, ou land_application
-- Optionnelle (required:false) si discharge_type = indirect_sanitary_sewer
-  uniquement
+**Required fix:**
+Split into two distinct options:
+- "Environmental discharge — direct release to receiving environment"
+- "Sewer connection — indirect discharge to municipal sewer system"
 
 ---
 
-### BUG-08 — Q19 Groundwater impact : option "No groundwater impact" insuffisante
-**Sévérité : MINEURE**
-**Profils affectés : P1, P2**
+### BUG-04 — FSE / restaurant not guided toward correct regulatory scope
+**Severity: MAJOR**
+**Affected profiles: P1**
 
-**Problème :**
-L'option "No — no groundwater impact identified" existe (correction
-qu'on avait faite), mais elle n'est pas mutuellement exclusive avec
-les autres options dans l'UI. Un utilisateur pourrait cocher à la fois
-"Yes — infiltration recharge" ET "No groundwater impact" par erreur.
+**Problem:**
+A restaurant is classified "institutional" in Q1 (promoter type), but its
+kitchen effluent (high FOG, BOD, TSS) is regulated as a food service
+establishment (FSE) discharge in most jurisdictions — with specific
+pretreatment standards distinct from general municipal wastewater regulations.
 
-**Correction requise :**
-Implémenter une logique d'exclusion mutuelle dans le frontend :
-si "no_groundwater_impact" est coché, décocher automatiquement
-toutes les autres options, et vice versa.
+The questionnaire does not guide the user toward this specific sub-scope.
+An engineer may check only "municipal_wastewater" which is incomplete —
+FSE pretreatment regulations (grease interceptors, FOG programs) are a
+distinct regulatory instrument in most jurisdictions.
 
----
-
-### BUG-09 — Navigation STEP 3 : sous-scopes affichés même si non pertinents
-**Sévérité : MAJEURE**
-**Profils affectés : P1**
-
-**Problème :**
-P1 (restaurant) cochera probablement "municipal_wastewater" en Q4.
-Q6 (municipal_wastewater_subscopes) lui proposera entre autres :
-- "Combined sewer overflow (CSO)" → HORS SCOPE pour un restaurant
-- "Hospital / healthcare wastewater" → HORS SCOPE
-- "Centralized municipal wastewater treatment plant (WWTP)" → HORS SCOPE
-  (c'est la ville qui opère la STEP, pas le restaurant)
-
-Un ingénieur novice pourrait cocher "centralized_wwtp" par confusion,
-pensant que c'est là où ses eaux vont — alors que ça désigne l'opérateur
-de la STEP, pas le raccordement à l'égout.
-
-**Correction requise :**
-Ajouter un sous-scope dédié dans municipal_wastewater_subscopes :
-- "Commercial / institutional discharge to municipal sewer (indirect)"
-  avec note : "The facility connects to the municipal sewer system.
-  The municipality operates the downstream WWTP."
-Clarifier que "centralized_wwtp" = être l'opérateur de la STEP.
+**Required fix:**
+Add a dedicated sub-scope in municipal_wastewater_subscopes:
+- "Food service / commercial kitchen discharge to sewer (FOG / grease interceptor)"
+  with ontology_refs: [food_service_establishment, fog_program, grease_interceptor]
+And add clarifying help text in Q4 for institutional promoters.
 
 ---
 
-### BUG-10 — Q12 Water source : absent pour projets sans captage mais sur réseau
-**Sévérité : MINEURE**
-**Profils affectés : P1, P4 partiel**
+### BUG-05 — Q15 Downstream intake: not asked for indirect discharge projects
+**Severity: MAJOR**
+**Affected profiles: P1, P4 (partial indirect)**
 
-**Problème :**
-Q12 propose "Municipal supply (pre-treated utility feed)" et
-"No water intake" — mais pour un restaurant, ni l'un ni l'autre
-n'est exactement juste :
-- Il est alimenté par le réseau municipal → "municipal_supply" est correct
-- Mais "No water intake" suggère un projet de traitement pur
+**Problem:**
+Q15 "Is there a downstream drinking water intake?" is conditional only on
+"direct_surface_water". It is not asked for indirect discharge projects.
 
-Le libellé "No water intake — discharge or treatment project only"
-est trompeur pour P1 qui a bien une entrée d'eau (réseau municipal)
-mais pas de captage propre.
+However, when a project discharges indirectly to a municipal sewer, the
+downstream WWTP may itself discharge to a surface water body with a
+downstream drinking water intake. This information is relevant in
+jurisdictions with source water protection programs that extend to
+WWTP receiving waters (e.g., Ontario Clean Water Act source protection
+plans, EU Water Framework Directive protected areas).
 
-**Correction suggérée :**
-Renommer "No water intake" en "No raw water abstraction — facility
-supplied by municipal distribution network" pour plus de précision.
+**Required fix:**
+Ask Q15 with an adapted label when indirect_sanitary_sewer is selected:
+"Does the receiving municipal WWTP discharge to a watercourse with a
+downstream drinking water intake?"
 
 ---
 
-## RÉSUMÉ DE L'AUDIT
+### BUG-06 — Q3 Capacity: m³/day unit not intuitive for small projects
+**Severity: MINOR**
+**Affected profiles: P1, P5**
 
-| Bug ID | Description | Sévérité | Profils |
-|--------|-------------|----------|---------|
-| BUG-01 | Q17 Water streams non filtrées / discharge type | CRITIQUE | P1,P3,P5,P6 |
-| BUG-02 | Q18 Activities non filtrées / scope | CRITIQUE | P1,P3,P5 |
-| BUG-03 | Terme "Discharge" ambigu (direct vs indirect) | MAJEURE | P1,P4,P5 |
-| BUG-04 | FSE/restaurant non guidé vers bon scope | MAJEURE | P1 |
-| BUG-05 | Q15 downstream intake manquant pour rejet indirect | MAJEURE | P1,P4 |
-| BUG-06 | Unité m³/jour non intuitive petits projets | MINEURE | P1,P5 |
-| BUG-07 | Q16 sensitive zones toujours obligatoire | MINEURE | P1 |
-| BUG-08 | Q19 "No groundwater" non exclusif mutuellement | MINEURE | P1,P2 |
-| BUG-09 | Q6 sous-scopes WWTP confus pour raccordement égout | MAJEURE | P1 |
-| BUG-10 | Q12 libellé "No water intake" trompeur | MINEURE | P1,P4 |
+**Problem:**
+A restaurant produces typically 1–5 m³/day of kitchen wastewater.
+The "micro (< 10 m³/day)" category is correct, but m³/day is not
+intuitive for a food service operator or engineer working with small
+systems — who typically think in L/day or population equivalents (PE).
 
-### Priorités de correction
+For P5 (rural septic), capacity is often expressed in population
+equivalents (PE) or person equivalents, not m³/day.
 
-**P1 — Corrections bloquantes (à faire avant tout déploiement)**
-- BUG-01 : filtrage Q17 par discharge_type
-- BUG-02 : filtrage Q18 par scope + discharge_type
-- BUG-09 : clarifier sous-scopes WWTP vs raccordement égout
+**Suggested fix:**
+Add equivalences in parentheses:
+- "< 10 m³/day (approx. < 100 PE or < 10,000 L/day)"
+- "10 – 500 m³/day (approx. 100 – 5,000 PE)"
 
-**P2 — Corrections importantes (avant déploiement production)**
-- BUG-03 : scinder "Discharge" en direct vs indirect
-- BUG-04 : ajouter sous-scope FSE/commercial kitchen
-- BUG-05 : étendre Q15 aux rejets indirects
+---
 
-**P3 — Améliorations UX (post-déploiement)**
-- BUG-06 : ajouter équivalences PE dans capacité
-- BUG-07 : rendre Q16 conditionnelle pour rejet indirect
-- BUG-08 : exclusion mutuelle Q19
-- BUG-10 : clarifier libellé Q12
+### BUG-07 — Q16 Sensitive zones: always required regardless of discharge type
+**Severity: MINOR**
+**Affected profiles: P1**
 
+**Problem:**
+Q16 "Sensitive zones" is required:true and always visible for all projects,
+including an urban restaurant connected to the municipal sewer. For such
+a project, the sensitive zones question has limited regulatory relevance
+and unnecessarily burdens the questionnaire flow.
+
+**Suggested fix:**
+Make Q16 conditional:
+- Always required if discharge_type includes direct_surface_water,
+  direct_groundwater, or land_application
+- Optional (required:false) if discharge_type = indirect_sanitary_sewer only
+
+---
+
+### BUG-08 — Q19 Groundwater: "No impact" option not mutually exclusive
+**Severity: MINOR**
+**Affected profiles: P1, P2**
+
+**Problem:**
+The option "No — no groundwater impact identified" exists (a correction
+applied in v2), but it is not mutually exclusive with other options in
+the UI. A user could accidentally check both "Yes — infiltration recharge"
+AND "No groundwater impact."
+
+**Required fix:**
+Implement mutual exclusion logic in the frontend:
+if "no_groundwater_impact" is checked → automatically uncheck all other
+options, and vice versa (checking any "Yes" option unchecks "No").
+
+---
+
+### BUG-09 — Q6 Municipal WW subscopes: WWTP operator vs sewer connection conflated
+**Severity: MAJOR**
+**Affected profiles: P1**
+
+**Problem:**
+Q6 (municipal_wastewater_subscopes) proposes "Centralized municipal
+wastewater treatment plant (WWTP)" as a sub-scope. A novice engineer
+for a restaurant project may check this option thinking it refers to
+where their wastewater goes — when in fact it designates the entity
+that OPERATES the WWTP (i.e., the municipality itself).
+
+This confusion leads to incorrect regulatory scope classification:
+- Checking "centralized_wwtp" as an indirect discharger incorrectly implies
+  the project proponent operates the WWTP
+- The correct sub-scope for a restaurant is "pretreatment_to_sewer" only
+
+Additionally, "Combined sewer overflow (CSO)" and "Hospital wastewater"
+appear in Q6 for all municipal WW projects regardless of the promoter type,
+creating unnecessary noise.
+
+**Required fix:**
+1. Clarify label: "Centralized WWTP — I am the operator of the treatment plant"
+2. Add: "Connection to municipal sewer — indirect discharge (I am NOT the WWTP operator)"
+3. Filter CSO and hospital options based on promoter_type
+
+---
+
+### BUG-10 — Q12 Water source: "No water intake" label misleading
+**Severity: MINOR**
+**Affected profiles: P1, P4 partial**
+
+**Problem:**
+Q12 offers "No water intake — discharge or treatment project only."
+For a restaurant (P1), neither option is exactly right:
+- It IS supplied by the municipal network → "municipal_supply" applies
+- But "No water intake" suggests a purely discharge-focused project
+  with no incoming water at all
+
+The label is misleading for facilities supplied by the municipal
+distribution network that do not abstract raw water themselves.
+
+**Suggested fix:**
+Rename "No water intake" to:
+"No raw water abstraction — facility supplied entirely by municipal
+distribution network or other utility"
+
+---
+
+## AUDIT SUMMARY
+
+| Bug ID | Description | Severity | Fix Priority |
+|--------|-------------|----------|-------------|
+| BUG-01 | Q17 Water streams not filtered by discharge type | CRITICAL | P1 |
+| BUG-02 | Q18 Activities not filtered by scope/source | CRITICAL | P1 |
+| BUG-03 | "Discharge" term ambiguous (direct vs indirect) | MAJOR | P2 |
+| BUG-04 | FSE/restaurant not guided to correct scope | MAJOR | P2 |
+| BUG-05 | Q15 downstream intake missing for indirect discharge | MAJOR | P2 |
+| BUG-09 | Q6 WWTP operator vs sewer connection conflated | MAJOR | P2 |
+| BUG-06 | m³/day unit not intuitive for small projects | MINOR | P3 |
+| BUG-07 | Q16 sensitive zones always required | MINOR | P3 |
+| BUG-08 | Q19 "No groundwater" not mutually exclusive | MINOR | P3 |
+| BUG-10 | Q12 "No water intake" label misleading | MINOR | P3 |
+
+### Correction roadmap
+
+**Priority 1 — Blocking (before any deployment)**
+- BUG-01: Dynamic filtering of Q17 by discharge_type + water_families
+- BUG-02: Dynamic filtering of Q18 by water_source + discharge_type + water_families
+
+**Priority 2 — Important (before production deployment)**
+- BUG-03: Split "Discharge" activity into direct vs indirect
+- BUG-04: Add FSE/food service sub-scope
+- BUG-05: Extend Q15 to indirect discharge projects
+- BUG-09: Clarify WWTP operator vs sewer connection in Q6
+
+**Priority 3 — UX improvements (post-deployment)**
+- BUG-06: Add PE equivalences to capacity options
+- BUG-07: Make Q16 conditional for indirect-only projects
+- BUG-08: Mutual exclusion logic for Q19 groundwater
+- BUG-10: Clarify Q12 "No raw water abstraction" label
+
+---
+
+### BUG-11 — Location: non-blocking at start but not enforced at submission
+**Severity: MAJOR**
+**Affected profiles: All profiles**
+**Discovered: post-deployment testing**
+
+**Problem:**
+STEP 0 (project location) is documented as a blocking gate but is not enforced
+at any point in the current UI. A user can complete all 20 questions and submit
+the intake without ever entering or confirming a project location.
+
+This is a critical data quality issue: the regAssist engine requires a confirmed
+jurisdiction (country → province/state → municipality + GPS coordinates) to map
+applicable regulations. A classification object without location context is
+unusable for regulatory identification.
+
+**Expected behavior (Perspective 1 — soft start, hard block at submit):**
+- Start: map and location field displayed with a soft invitation to confirm the
+  project site. User CAN proceed to questions without confirming location.
+  This supports feasibility-phase use where the exact site may not yet be known.
+- Questions 1-20: fully accessible without location confirmation.
+- Submit button: BLOCKED if location has not been explicitly confirmed.
+  Clear error message shown. User must confirm location before submission.
+
+**Definition of "confirmed location":**
+- Location field is not empty AND not the default placeholder value
+- User has clicked the "Confirm location" button explicitly, OR
+- User has performed a geocoding search and the result was accepted, OR
+- User has clicked/dragged the map marker to a new position
+
+**Required fix — all affected files:**
+1. audit_questionnaire_v2.md: add this entry
+2. plan_questions.md: update STEP 0 blocking rule
+3. canonical.yaml: update STEP 0 comment
+4. en.yaml: add new location_ui labels (confirm button, warning message)
+5. intake_router.py: add project.location validation in _validate_answers()
+6. IntakeForm.jsx: add locationConfirmed prop + submit-time validation
+7. index.html: implement confirm button, location state, submit block + message
+
+**writes_to:** project.location.confirmed (boolean),
+              project.location.name (string),
+              project.location.coordinates (lat, lng)

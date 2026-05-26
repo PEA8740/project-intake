@@ -23,7 +23,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .btn-search{padding:6px 12px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer}
 .btn-search:hover{background:#0C447C}
 .loc-pill{background:#EBF5FF;color:#185FA5;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:500;white-space:nowrap}
-.version-badge{margin-left:auto;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:20px;padding:3px 10px;font-size:11px;color:#6b7280}
+.version-badge{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:20px;padding:3px 10px;font-size:11px;color:#6b7280}
+.btn-confirm{padding:5px 12px;background:#fff;color:#185FA5;border:1px solid #185FA5;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500;transition:all .12s;white-space:nowrap}
+.btn-confirm:hover{background:#EBF5FF}
+.btn-confirm.confirmed{background:#ECFDF5;color:#065F46;border-color:#6EE7B7;cursor:default}
+.loc-status{font-size:11px;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.loc-status.unconfirmed{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
+.loc-status.confirmed{background:#ECFDF5;color:#065F46;border:1px solid #6EE7B7}
+.loc-invite{background:#FFF9F0;border:1px solid #FCD34D;border-radius:8px;padding:8px 12px;font-size:12px;color:#92400E;margin-bottom:12px;display:none}
+.submit-block-msg{background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;font-size:13px;color:#B91C1C;margin:10px 16px;display:none}
 .prog-bar{height:3px;background:#e5e7eb;flex-shrink:0}
 .prog-fill{height:100%;background:#185FA5;transition:width .3s ease}
 .main{display:flex;flex:1;overflow:hidden}
@@ -82,7 +90,9 @@ textarea:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95
     <button class="btn-search" onclick="geocode()">🔍 Search</button>
   </div>
   <span class="loc-pill" id="coordPill">📍 43.6535, -79.3839</span>
-  <span class="version-badge">v2.1.0</span>
+  <button class="btn-confirm" id="btnConfirmLoc" onclick="confirmLocation()">✓ Confirm location</button>
+  <span class="loc-status unconfirmed" id="locStatus">⚠ Location not confirmed</span>
+  <span class="version-badge">v2.1.1</span>
 </div>
 
 <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
@@ -133,11 +143,18 @@ marker.on('dragend',()=>{
   const ll=marker.getLatLng();
   document.getElementById('coordPill').textContent=`📍 ${ll.lat.toFixed(4)}, ${ll.lng.toFixed(4)}`;
   reverseGeocode(ll.lat,ll.lng);
+  // Auto-confirm on manual marker move
+  locationConfirmed=true;
+  locationData={name:document.getElementById('locInput').value||'Custom location',lat:ll.lat,lng:ll.lng};
+  updateLocStatus();
 });
 map.on('click',(e)=>{
   marker.setLatLng(e.latlng);
   document.getElementById('coordPill').textContent=`📍 ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
   reverseGeocode(e.latlng.lat,e.latlng.lng);
+  locationConfirmed=true;
+  locationData={name:document.getElementById('locInput').value||'Custom location',lat:e.latlng.lat,lng:e.latlng.lng};
+  updateLocStatus();
 });
 
 async function geocode(){
@@ -149,9 +166,11 @@ async function geocode(){
     const d=await r.json();
     if(d&&d.length>0){
       const lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon);
+      const shortName=d[0].display_name.split(',').slice(0,3).join(',');
       map.setView([lat,lng],12);
       marker.setLatLng([lat,lng]).bindPopup(d[0].display_name).openPopup();
       document.getElementById('coordPill').textContent=`📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      confirmAfterGeocode(shortName, lat, lng);
     }else alert('Location not found. Try a different search term.');
   }catch(e){alert('Search error. Check your internet connection.');}
   finally{sp.style.display='none';}
@@ -479,6 +498,55 @@ const SCHEMA={questions:[
 ]};
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// BUG-11: LOCATION STATE
+// ═══════════════════════════════════════════════════════════════════════════════
+const DEFAULT_LOC = {name:'Toronto, Ontario, Canada', lat:43.6535, lng:-79.3839};
+let locationConfirmed = false;
+let locationData = {...DEFAULT_LOC};
+const DEFAULT_PLACEHOLDER = DEFAULT_LOC.name;
+
+function confirmLocation(){
+  const name = document.getElementById('locInput').value.trim();
+  if(!name || name === DEFAULT_PLACEHOLDER){
+    alert('Please enter a specific project location before confirming.');
+    return;
+  }
+  const ll = marker.getLatLng();
+  locationConfirmed = true;
+  locationData = { name, lat: ll.lat, lng: ll.lng };
+  updateLocStatus();
+  // Hide submit block message if visible
+  const msg = document.getElementById('submitBlockMsg');
+  if(msg) msg.style.display='none';
+}
+
+function updateLocStatus(){
+  const btn = document.getElementById('btnConfirmLoc');
+  const badge = document.getElementById('locStatus');
+  if(locationConfirmed){
+    btn.textContent = '✓ Location confirmed';
+    btn.classList.add('confirmed');
+    btn.onclick = null;
+    badge.textContent = '✅ ' + locationData.name;
+    badge.className = 'loc-status confirmed';
+  } else {
+    btn.textContent = '✓ Confirm location';
+    btn.classList.remove('confirmed');
+    btn.onclick = confirmLocation;
+    badge.textContent = '⚠ Location not confirmed';
+    badge.className = 'loc-status unconfirmed';
+  }
+}
+
+// Auto-confirm when geocoding succeeds or marker moved
+function confirmAfterGeocode(name, lat, lng){
+  document.getElementById('locInput').value = name;
+  locationConfirmed = true;
+  locationData = { name, lat, lng };
+  updateLocStatus();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // CONDITION ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 function isVisible(q){
@@ -645,6 +713,10 @@ function render(){
   const vis=visibleQ(),total=vis.length;
   if(currentIdx>=total){showDone();return;}
   const q=vis[currentIdx];
+  // BUG-11: show soft invite if location not confirmed
+  const inviteHtml = !locationConfirmed && currentIdx < 3
+    ? `<div class="loc-invite" style="display:block">📍 Project location not yet confirmed — you can continue and confirm before submitting.</div>`
+    : '';
 
   document.getElementById('progLbl').textContent=`Question ${currentIdx+1} of ${total}`;
   document.getElementById('stepBadge').textContent=q.step||'';
@@ -654,7 +726,7 @@ function render(){
   const label=q.id==='downstream_drinking_water_intake'?getQ15Label(q):q.label;
   const isReq=q.required!==false&&q.type!=='text_area';
 
-  let html=`<div class="q-label">${label}${isReq?'<span class="req"> *</span>':''}</div>`;
+  let html=inviteHtml+`<div class="q-label">${label}${isReq?'<span class="req"> *</span>':''}</div>`;
   if(q.help)html+=`<p class="q-help">${q.help}</p>`;
 
   if(q.id==='water_streams'||q.id==='project_activities'){
@@ -705,7 +777,24 @@ function nav(dir){
       if(el){el.textContent='⚠ '+err;el.classList.add('show');}
       return;
     }
-    if(currentIdx>=vis.length-1){showDone();return;}
+    // BUG-11: block submit if location not confirmed
+    if(currentIdx>=vis.length-1){
+      if(!locationConfirmed){
+        let msg=document.getElementById('submitBlockMsg');
+        if(!msg){
+          msg=document.createElement('div');
+          msg.id='submitBlockMsg';
+          msg.className='submit-block-msg';
+          document.querySelector('.nav').before(msg);
+        }
+        msg.innerHTML='📍 <strong>Location required before submitting.</strong> Please enter a project location above and click <em>Confirm location</em>.';
+        msg.style.display='block';
+        // Scroll to top to show topbar
+        document.querySelector('.q-body').scrollTop=0;
+        return;
+      }
+      showDone();return;
+    }
   }
   currentIdx=Math.max(0,Math.min(vis.length-1,currentIdx+dir));
   render();
@@ -713,6 +802,15 @@ function nav(dir){
 
 function buildClassification(){
   const r={};
+  // BUG-11: include confirmed location in classification
+  if(locationConfirmed){
+    r.project = r.project || {};
+    r.project.location = {
+      confirmed: true,
+      name: locationData.name,
+      coordinates: { lat: locationData.lat, lng: locationData.lng }
+    };
+  }
   for(const q of SCHEMA.questions){
     const v=answers[q.id];
     if(v===undefined||v===''||(Array.isArray(v)&&v.length===0))continue;

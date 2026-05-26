@@ -1,7 +1,16 @@
 # AquaForge regAssist — Intake Questionnaire UI Labels
 # Locale: English (en)
 # Canonical ref: water_project_intake_v2.canonical.yaml
-# Version: 0.2.0
+# Version: 0.2.1
+# Changelog v2.0 → v2.1:
+#   BUG-03: new labels for direct_environmental_discharge + sewer_connection_discharge
+#   BUG-04: new label for food_service_establishment
+#   BUG-05: Q15 label variants for direct vs indirect discharge context
+#   BUG-06: PE equivalences added to capacity option labels
+#   BUG-07: help text updated for sensitive_zones
+#   BUG-08: help text updated for groundwater_impact (mutual exclusion)
+#   BUG-09: centralized_wwtp_operator relabeled; sewer_connection_indirect_discharge added
+#   BUG-10: no_raw_water_abstraction relabeled
 
 locale: en
 questionnaire_id: water_project_intake_v2
@@ -25,11 +34,10 @@ step_labels:
   step_4: "Source & Receiving Environment"
   step_5: "Streams, Activities & Groundwater"
 
-# ─────────────────────────────────────────────
-# STEP 0 — Location (UI map component)
-# ─────────────────────────────────────────────
 location_ui:
   title: "Where will the water facility be located?"
+  subtitle: "You may proceed to the questionnaire now and confirm the location later.
+             However, location must be confirmed before final submission."
   search_placeholder: "Enter city, region or coordinates..."
   auto_detect_label: "Detected receiving environment"
   confirm_prompt: "Is this the correct receiving water body for your project?"
@@ -37,24 +45,35 @@ location_ui:
   confirm_no: "No, enter manually"
   manual_entry_label: "Enter water body name manually"
   no_body_detected: "No water body detected nearby — please enter manually."
+  # BUG-11: new labels
+  confirm_button: "✓ Confirm location"
+  confirmed_badge: "Location confirmed"
+  not_confirmed_badge: "Location not confirmed"
+  invitation_soft: "Location not yet confirmed — you can continue and confirm before submitting."
+  submit_block_message: "Please confirm the project location before submitting.
+                          Enter a city or coordinates above and click Confirm location."
   fields:
     country: "Country"
     province_state: "Province / State / Region"
     municipality: "Municipality / City"
 
-# ─────────────────────────────────────────────
-# STEP 1 — Project Characterization
-# ─────────────────────────────────────────────
 questions:
+
+  # ── STEP 1 ──────────────────────────────────────────────────────────────────
+
   promoter_type:
     label: "What type of organization is leading this project?"
     help: "The promoter type determines which regulatory regimes apply
-           (municipal bylaws, industrial sector regulations, federal permits, etc.)."
+           (municipal bylaws, industrial sector regulations, federal permits, etc.).
+           Note: food service establishments (restaurants, cafeterias, hotel kitchens,
+           commercial kitchens) should select 'Institutional facility' and will be
+           guided to the appropriate food service sub-scope in the next steps."
     options:
       municipal: "Municipal authority / public water utility"
       industrial: "Industrial company (sector to be specified)"
       private_utility: "Private operator / concession holder"
-      institutional: "Institutional facility (hospital, university, campus, military)"
+      institutional: "Institutional facility (hospital, university, campus,
+                      military, food service establishment, commercial kitchen)"
       agricultural: "Agricultural operator / fish farm / livestock operation"
       federal_government: "Federal or national government agency"
       real_estate_developer: "Real estate developer"
@@ -62,9 +81,8 @@ questions:
 
   industrial_sector:
     label: "What is the primary industrial sector?"
-    help: "Sector-specific effluent regulations (e.g., federal sectoral standards,
-           IPPC/IED permits, NPDES industrial permits) are conditioned on the
-           industrial sector. Select all that apply if the facility spans multiple sectors."
+    help: "Sector-specific effluent regulations are conditioned on the industrial
+           sector. Select all that apply if the facility spans multiple sectors."
     options:
       food_beverage: "Food and beverage processing"
       pulp_paper: "Pulp, paper and wood products"
@@ -79,8 +97,8 @@ questions:
 
   project_phase:
     label: "What phase is the project in?"
-    help: "Select the best match. The project phase determines which permits and
-           authorizations must be obtained at this stage."
+    help: "Select the best match. The project phase determines which permits
+           and authorizations must be obtained at this stage."
     options:
       feasibility_predesign: "Feasibility study / pre-design"
       detailed_design: "Detailed engineering design"
@@ -91,26 +109,32 @@ questions:
       decommissioning: "Decommissioning / closure"
       unknown: "Unknown / to be determined"
 
+  # BUG-06: PE equivalences added to all options
   project_capacity:
     label: "What is the nominal treatment or discharge capacity?"
-    help: "Order-of-magnitude estimate is sufficient. Capacity thresholds determine
-           mandatory environmental impact assessments, operator certification class,
-           and monitoring frequency requirements."
+    help: "An order-of-magnitude estimate is sufficient. Capacity thresholds
+           determine mandatory environmental impact assessment obligations,
+           operator certification class, and monitoring frequency requirements.
+           Population equivalent (PE) approximations are provided for reference."
     options:
-      micro: "Less than 10 m³/day (decentralized systems, small buildings)"
-      small: "10 – 500 m³/day (small communities, light industrial)"
-      medium: "500 – 10,000 m³/day (mid-size communities, moderate industries)"
-      large: "10,000 – 100,000 m³/day (large cities, heavy industries)"
-      very_large: "More than 100,000 m³/day (major metropolitan areas, large complexes)"
+      micro: "< 10 m³/day (approx. < 100 PE or < 10,000 L/day)
+              — decentralized systems, single buildings, food service establishments"
+      small: "10 – 500 m³/day (approx. 100 – 5,000 PE)
+              — small communities, light industrial, rural systems"
+      medium: "500 – 10,000 m³/day (approx. 5,000 – 100,000 PE)
+               — mid-size communities, moderate industries"
+      large: "10,000 – 100,000 m³/day (approx. 100,000 – 1,000,000 PE)
+              — large cities, heavy industries"
+      very_large: "> 100,000 m³/day (approx. > 1,000,000 PE)
+                  — major metropolitan areas, large industrial complexes"
       unknown: "Not yet determined / to be assessed"
 
-# ─────────────────────────────────────────────
-# STEP 2 — Primary Water Scopes
-# ─────────────────────────────────────────────
+  # ── STEP 2 ──────────────────────────────────────────────────────────────────
+
   water_families:
     label: "Which water scopes are part of this project?"
     help: "Select all that apply. Many projects involve more than one water scope.
-           Each scope you select will generate a dedicated follow-up question."
+           Each scope selected generates a dedicated follow-up question."
     options:
       drinking_water: "Drinking water (production, treatment, distribution)"
       municipal_wastewater: "Municipal / sanitary wastewater"
@@ -121,9 +145,8 @@ questions:
       residuals_biosolids: "Residuals / sludge / biosolids"
       other_unsure: "Other / not sure — describe in the final question"
 
-# ─────────────────────────────────────────────
-# STEP 3 — Detailed Sub-scopes
-# ─────────────────────────────────────────────
+  # ── STEP 3 ──────────────────────────────────────────────────────────────────
+
   drinking_water_subscopes:
     label: "What drinking water scopes apply?"
     help: "Select all that apply."
@@ -134,29 +157,46 @@ questions:
       private_well_supply: "Private well supply (individual or small cluster)"
       desalination: "Desalination (seawater or brackish water)"
 
+  # BUG-04 + BUG-09: new options + relabeled WWTP operator
   municipal_wastewater_subscopes:
     label: "What municipal wastewater scopes apply?"
-    help: "Select all relevant combinations of wastewater source and treatment /
-           discharge pathway."
-    group_labels:
-      axis_a: "Wastewater source"
-      axis_b: "Treatment / discharge pathway"
+    help: "Select all relevant options. If you are a restaurant, cafeteria,
+           hotel kitchen, or any food service establishment, select 'Food service /
+           commercial kitchen discharge'. If you connect to the municipal sewer
+           but do not operate the treatment plant yourself, select 'Connection to
+           municipal sewer'."
     options:
       domestic_residential: "Domestic / residential / institutional wastewater"
-      combined_sewer_overflow: "Combined sewer overflow (CSO)"
+      # BUG-04: new option
+      food_service_establishment: "Food service / commercial kitchen discharge to
+                                   municipal sewer (FOG / grease interceptor program)
+                                   — restaurants, cafeterias, hotel kitchens, food processors"
+      combined_sewer_overflow: "Combined sewer overflow (CSO) management"
       hospital_wastewater: "Hospital / healthcare wastewater (micropollutants, pharmaceuticals)"
-      centralized_wwtp: "Centralized municipal wastewater treatment plant (WWTP)"
-      pretreatment_to_sewer: "Industrial pretreatment before discharge to municipal sewer"
-      decentralized_onsite: "Decentralized / on-site treatment (septic tank, package plant, constructed wetland)"
+      # BUG-09: new option
+      sewer_connection_indirect_discharge: "Connection to municipal sewer — indirect
+                                            discharge (I connect TO the sewer; I do NOT
+                                            operate the downstream treatment plant)"
+      # BUG-09: relabeled
+      centralized_wwtp_operator: "Centralized municipal WWTP — I am the OPERATOR
+                                   of the wastewater treatment plant (municipality
+                                   or contracted operator only)"
+      pretreatment_to_sewer: "Industrial pretreatment before discharge to municipal
+                               sewer (industrial-strength effluent requiring on-site
+                               treatment before sewer connection)"
+      decentralized_onsite: "Decentralized / on-site treatment (septic tank,
+                              package plant, constructed wetland, biofilter)"
       land_application: "Land application of treated effluent or biosolids"
-      direct_environmental_discharge: "Direct discharge to a natural receiving environment (after treatment)"
+      direct_environmental_discharge: "Direct discharge to a natural receiving
+                                       environment after treatment (river, lake, coastal water)"
 
   industrial_wastewater_subscopes:
     label: "What industrial wastewater scopes apply?"
     help: "Select all that apply."
     options:
       process_effluent_direct_discharge: "Process effluent discharged directly to surface water"
-      process_effluent_to_sewer: "Process effluent discharged to municipal sewer (pretreatment required)"
+      process_effluent_to_sewer: "Process effluent discharged to municipal sewer
+                                  (pretreatment required)"
       cooling_water_blowdown: "Cooling water / blowdown (cooling towers, once-through)"
       landfill_leachate: "Landfill leachate / contaminated site leachate"
       agricultural_runoff_return: "Agricultural runoff / irrigation return flows"
@@ -166,10 +206,13 @@ questions:
     label: "What stormwater scopes apply?"
     help: "Select all that apply."
     options:
-      urban_stormwater_management: "Urban stormwater management (retention basins, green infrastructure, bioswales)"
+      urban_stormwater_management: "Urban stormwater management (retention basins,
+                                    green infrastructure, bioswales)"
       construction_site_runoff: "Construction site runoff (sediment and erosion control)"
-      agricultural_stormwater: "Agricultural stormwater (concentrated animal feeding operations)"
-      industrial_site_stormwater: "Industrial site stormwater (contaminated runoff, spill prevention)"
+      agricultural_stormwater: "Agricultural stormwater (concentrated animal
+                                feeding operations, field runoff)"
+      industrial_site_stormwater: "Industrial site stormwater (contaminated runoff,
+                                   spill prevention)"
 
   groundwater_subscopes:
     label: "What groundwater scopes apply?"
@@ -185,11 +228,14 @@ questions:
     label: "What water reuse scopes apply?"
     help: "Select all that apply."
     options:
-      indirect_potable_reuse: "Indirect potable reuse (aquifer recharge or reservoir augmentation before re-treatment)"
-      direct_potable_reuse: "Direct potable reuse (advanced treated water injected into drinking water system)"
+      indirect_potable_reuse: "Indirect potable reuse (aquifer recharge or
+                               reservoir augmentation before re-treatment)"
+      direct_potable_reuse: "Direct potable reuse (advanced treated water
+                             injected into drinking water system)"
       non_potable_irrigation: "Non-potable reuse — agricultural or landscape irrigation"
       non_potable_industrial: "Non-potable reuse — industrial process water"
-      non_potable_urban: "Non-potable reuse — urban uses (toilet flushing, street washing, fire protection)"
+      non_potable_urban: "Non-potable reuse — urban uses (toilet flushing,
+                          street washing, fire protection)"
 
   residuals_subscopes:
     label: "What residuals / biosolids scopes apply?"
@@ -199,40 +245,52 @@ questions:
       biosolids_landfill: "Biosolids / sludge landfill disposal"
       thermal_drying_incineration: "Thermal drying / incineration / co-incineration"
       sludge_composting: "Sludge composting / anaerobic digestion with biogas recovery"
-      spent_filter_media_resin: "Spent filter media / exhausted resins (GAC, sand, ion-exchange)"
+      spent_filter_media_resin: "Spent filter media / exhausted resins (GAC, sand, IX)"
 
-# ─────────────────────────────────────────────
-# STEP 4 — Source & Receiving Environment
-# ─────────────────────────────────────────────
+  # ── STEP 4 ──────────────────────────────────────────────────────────────────
+
+  # BUG-10: no_raw_water_abstraction relabeled
   water_source_type:
     label: "What is the nature of the raw water source?"
-    help: "Select all sources that will be collected, abstracted, or used by the project."
+    help: "Select all sources that will be collected, abstracted, or used by
+           the project. If your facility is supplied by the municipal distribution
+           network and does not abstract raw water itself, select
+           'No raw water abstraction'."
     options:
       river_stream: "River / stream (flowing surface water)"
       lake_reservoir: "Lake / reservoir (standing surface water)"
-      large_lake_system: "Large lake system (e.g., Great Lakes, Lake Geneva, Caspian Sea, Scandinavian lakes)"
-      ocean_coastal: "Ocean / coastal / estuarine water (desalination or marine discharge)"
+      large_lake_system: "Large lake system (Great Lakes, Lake Geneva, Caspian Sea,
+                          Scandinavian lakes, African Great Lakes...)"
+      ocean_coastal: "Ocean / coastal / estuarine water (desalination or marine)"
       confined_aquifer: "Confined aquifer (artesian groundwater)"
       unconfined_aquifer: "Unconfined aquifer / water table (phreatic groundwater)"
-      municipal_supply: "Pre-treated municipal water supply (utility feed)"
+      municipal_supply: "Pre-treated municipal water supply — facility is connected
+                         to and supplied by the municipal distribution network
+                         (no raw water abstraction performed on-site)"
       rainwater_harvesting: "Rainwater harvesting / rooftop collection"
-      no_water_intake: "No water intake — discharge or treatment project only"
+      # BUG-10: relabeled
+      no_raw_water_abstraction: "No raw water abstraction and no municipal supply
+                                 — discharge or treatment project only (e.g., WWTP
+                                 receiving wastewater with no process water intake)"
 
   discharge_type:
     label: "What type of discharge does this project involve?"
-    help: "This is the primary variable for identifying the applicable regulatory
-           regime. Direct discharge to a natural water body triggers environmental
-           quality standards and effluent permits. Indirect discharge to a municipal
-           sewer triggers pretreatment program requirements. Select all that apply."
+    help: "PRIMARY REGULATORY VARIABLE. Direct discharge to a natural water body
+           triggers environmental quality standards and effluent permit requirements.
+           Indirect discharge to a municipal sewer triggers pretreatment program
+           requirements (sewer use bylaws, industrial pretreatment standards).
+           The regAssist engine resolves applicable instruments based on jurisdiction.
+           Select all that apply."
     options:
       direct_surface_water: "Direct discharge to surface water (river, lake, ocean, estuary)"
       direct_groundwater: "Direct discharge to groundwater (injection well, infiltration basin)"
       indirect_sanitary_sewer: "Indirect discharge — municipal sanitary sewer"
       indirect_storm_sewer: "Indirect discharge — municipal storm sewer / combined sewer"
-      land_application: "Land application (irrigation, biosolids spreading, soil aquifer treatment)"
+      land_application: "Land application (irrigation, biosolids spreading,
+                         soil aquifer treatment)"
       reuse_on_site: "On-site reuse — no external discharge"
-      hauled_offsite_treatment: "Collected and hauled to an approved off-site treatment facility"
-      no_discharge_closed_loop: "No discharge — fully closed-loop / zero liquid discharge system"
+      hauled_offsite_treatment: "Collected and hauled to approved off-site treatment facility"
+      no_discharge_closed_loop: "No discharge — fully closed-loop / zero liquid discharge"
       unknown_to_determine: "Unknown / to be determined"
 
   receiving_environment_type:
@@ -250,96 +308,143 @@ questions:
       groundwater_aquifer: "Groundwater / aquifer (via injection or infiltration)"
       auto_detected: "Auto-detected from GPS coordinates (see map — requires confirmation)"
 
+  # BUG-05: two label variants based on discharge type context
   downstream_drinking_water_intake:
-    label: "Is there a drinking water intake downstream of the discharge point?"
-    help: "A downstream drinking water intake significantly increases the level
-           of treatment required and may trigger additional source water protection
-           requirements in most jurisdictions."
+    label_direct: "Is there a drinking water intake downstream of the discharge point?"
+    label_indirect: "Does the receiving municipal WWTP discharge to a watercourse
+                     with a downstream drinking water intake?"
+    label: "Is there a downstream drinking water intake affected by this project's discharge?"
+    help: "A downstream drinking water intake significantly increases treatment
+           requirements and may trigger source water protection obligations in most
+           jurisdictions. For indirect discharge projects, consider the receiving
+           WWTP's downstream discharge watercourse."
     options:
       yes_confirmed: "Yes — confirmed downstream drinking water intake"
       yes_suspected: "Probable but not confirmed"
       no: "No downstream drinking water intake identified"
       unknown: "Unknown"
 
+  # BUG-07: help text updated; conditional on external discharge pathway
   sensitive_zones:
     label: "Are any protected or environmentally sensitive zones affected by this project?"
     help: "Select all that apply. Automatic detection from GPS coordinates is
-           performed in the background. The regulatory engine will identify the
-           specific legal instruments applicable in your jurisdiction."
+           performed in the background. The regulatory engine identifies applicable
+           legal instruments in your jurisdiction. This question applies to all
+           projects with any external discharge pathway (direct, indirect, or land
+           application). It is optional for fully closed-loop or pure on-site
+           reuse projects."
     options:
-      drinking_water_source_protection_area: "Drinking water source protection zone / wellhead protection area"
-      protected_biodiversity_habitat: "Legally protected biodiversity / natural habitat zone"
+      drinking_water_source_protection_area: "Drinking water source protection
+                                              zone / wellhead protection area"
+      protected_biodiversity_habitat: "Legally protected biodiversity /
+                                       natural habitat zone"
       fish_aquatic_habitat: "Critical fish or aquatic species habitat"
       wetland_protected: "Protected wetland / marsh / bog"
       drinking_water_watershed: "Drinking water supply watershed / catchment area"
       floodplain_flood_risk_zone: "Floodplain / designated flood risk zone"
-      transboundary_shared_water_body: "Transboundary or internationally shared water body"
-      indigenous_traditional_territory: "Indigenous / First Nations traditional territory (duty to consult applies)"
+      transboundary_shared_water_body: "Transboundary or internationally
+                                        shared water body"
+      indigenous_traditional_territory: "Indigenous / First Nations traditional
+                                         territory (duty to consult applies)"
       none_identified: "No sensitive or protected zones identified"
       unknown: "Unknown / requires verification"
 
-# ─────────────────────────────────────────────
-# STEP 5 — Streams, Activities & Groundwater
-# ─────────────────────────────────────────────
+  # ── STEP 5 ──────────────────────────────────────────────────────────────────
+
+  # BUG-01: options filtered at render time by getFilteredOptions()
   water_streams:
     label: "What water streams are involved in this project?"
-    help: "Select all streams that will be collected, treated, discharged, reused,
-           stored, or monitored. Listed in treatment chain order."
+    help: "Select all streams that will be collected, treated, discharged,
+           reused, stored, or monitored. Options are filtered based on your
+           project scope and discharge type. Listed in treatment chain order."
     group_labels:
       inputs: "Inputs (influents)"
       internal: "Internal process streams"
       outputs: "Outputs (effluents & residuals)"
     options:
       raw_water: "Raw water (surface or groundwater before any treatment)"
-      raw_wastewater: "Raw wastewater (WWTP influent)"
-      industrial_process_water: "Industrial process water (incoming)"
-      filter_backwash_water: "Filter backwash water (rapid sand filters, ultrafiltration, membrane backwash)"
+      raw_wastewater: "Raw wastewater (WWTP influent — incoming sewage to treatment plant)"
+      industrial_process_water: "Industrial process water (incoming to facility)"
+      filter_backwash_water: "Filter backwash water (rapid sand filters,
+                              ultrafiltration, membrane backwash)"
       membrane_concentrate_ro_reject: "Membrane concentrate / RO reject / NF brine"
-      recycled_process_water: "Recycled / recirculated process water (returned to head of plant)"
-      disinfection_byproduct_streams: "Disinfection by-product streams (THM, HAA, chloramine-bearing purges)"
+      recycled_process_water: "Recycled / recirculated process water
+                               (returned to head of plant)"
+      disinfection_byproduct_streams: "Disinfection by-product streams
+                                       (THM, HAA, chloramine-bearing purges)"
       cooling_water: "Cooling water (circulating or once-through)"
-      treated_drinking_water: "Treated drinking water (finished water meeting potability standards)"
-      treated_wastewater_effluent: "Treated wastewater effluent (final effluent prior to discharge or reuse)"
+      treated_drinking_water: "Treated drinking water (finished water
+                               meeting potability standards)"
+      treated_wastewater_effluent: "Treated wastewater effluent (final effluent
+                                    prior to direct discharge or reuse)"
       sludge_biosolids: "Sludge / biosolids (treatment residuals)"
-      spent_filter_media_resin: "Spent filter media / exhausted resins (GAC, sand, ion-exchange)"
+      spent_filter_media_resin: "Spent filter media / exhausted resins
+                                 (GAC, sand, ion-exchange)"
       stormwater_site_runoff: "Stormwater / site runoff (from the project facility)"
       leachate: "Leachate (from landfill, contaminated site, or sludge lagoon)"
 
+  # BUG-02 + BUG-03: filtered options + discharge split
   project_activities:
     label: "What activities are part of this project?"
-    help: "Select all activities that will be carried out. Listed in the logical
-           order of the water treatment chain."
+    help: "Select all activities that will be carried out. Options are filtered
+           based on your project scope, water source, and discharge type.
+           Listed in the logical order of the water treatment chain."
     options:
-      water_abstraction_withdrawal: "Water abstraction / withdrawal (intake pumping, well extraction)"
-      pretreatment: "Pretreatment (screening, grit removal, oil-grease separation, flow equalization)"
-      treatment: "Primary or secondary treatment (conventional water or wastewater treatment)"
-      advanced_treatment: "Advanced treatment (ozonation, GAC, UV, membranes, advanced oxidation processes)"
+      water_abstraction_withdrawal: "Water abstraction / withdrawal
+                                     (raw water intake pumping, well extraction)"
+      pretreatment: "Pretreatment (screening, grit removal, oil-grease separation,
+                     grease interceptor, flow equalization)"
+      treatment: "Primary or secondary treatment (conventional water or
+                  wastewater treatment)"
+      advanced_treatment: "Advanced treatment (ozonation, GAC, UV, membranes,
+                           advanced oxidation processes)"
       storage: "Storage (clearwells, balancing tanks, effluent storage lagoons)"
-      collection_conveyance: "Collection and conveyance (sewer network, pipelines, pumping stations)"
-      discharge: "Discharge / release (effluent to receiving environment or sewer)"
+      collection_conveyance: "Collection and conveyance — operating a sewer
+                              network or distribution main (sewer pipes,
+                              distribution pipes, pumping stations)"
+      # BUG-03: split from generic "discharge"
+      direct_environmental_discharge: "Environmental discharge — direct release
+                                       of treated effluent to a receiving water
+                                       body or land (river, lake, ocean, groundwater,
+                                       land application)"
+      # BUG-03: new option
+      sewer_connection_discharge: "Sewer connection discharge — indirect release
+                                   of effluent or pretreated wastewater to the
+                                   municipal sanitary or storm sewer system"
       reuse: "Water reuse (reclaimed water supply, on-site or off-site)"
-      residuals_management: "Residuals management (sludge handling, dewatering, disposal)"
-      monitoring_reporting: "Monitoring and regulatory reporting (self-monitoring, compliance reporting)"
+      residuals_management: "Residuals management (sludge handling, dewatering,
+                             spent media disposal, biosolids management)"
+      monitoring_reporting: "Monitoring and regulatory reporting (self-monitoring,
+                             effluent sampling, compliance reporting)"
 
+  # BUG-08: mutual exclusion note in help text
   groundwater_impact:
     label: "Could this project affect groundwater or an aquifer?"
-    help: "Confirm whether any of the following groundwater pathways are relevant
-           to this project. Select all that apply."
+    help: "Confirm all groundwater pathways relevant to this project. Select all
+           that apply. If no groundwater impact exists, select only 'No — no
+           groundwater impact identified' (selecting this option will automatically
+           deselect all other options, and vice versa)."
     options:
       groundwater_withdrawal_well: "Yes — groundwater withdrawal or production well"
-      infiltration_recharge: "Yes — planned or potential infiltration / aquifer recharge"
-      onsite_septic_subsurface: "Yes — on-site septic system or subsurface dispersal"
-      land_application_leaching: "Yes — land application with leaching / percolation potential"
-      dewatering_remediation: "Yes — groundwater dewatering or aquifer remediation"
-      leachate_residuals_risk: "Yes — residuals or leachate that may affect groundwater quality"
-      no_groundwater_impact: "No — no groundwater impact identified"
+      infiltration_recharge: "Yes — planned or potential infiltration /
+                              aquifer recharge"
+      onsite_septic_subsurface: "Yes — on-site septic system or subsurface
+                                 dispersal"
+      land_application_leaching: "Yes — land application with leaching /
+                                  percolation potential"
+      dewatering_remediation: "Yes — groundwater dewatering or aquifer
+                               remediation"
+      leachate_residuals_risk: "Yes — residuals or leachate that may affect
+                                groundwater quality"
+      no_groundwater_impact: "No — no groundwater impact identified
+                              (mutually exclusive with all options above)"
 
   project_free_description:
     label: "Briefly describe anything important about the project."
     help: "Optional but recommended."
     placeholder: "Describe any aspect not covered by the previous questions:
                   key water quality parameters, site constraints, technologies
-                  under consideration, specific pollutants of concern (e.g., PFAS,
-                  microplastics, heavy metals, pathogens), flow variability,
-                  regulatory history, or any other information relevant to
-                  regulatory identification."
+                  under consideration, specific pollutants of concern (PFAS,
+                  microplastics, heavy metals, pathogens, FOG — fats, oils and
+                  grease), flow variability, regulatory history, or any other
+                  information relevant to regulatory identification."
