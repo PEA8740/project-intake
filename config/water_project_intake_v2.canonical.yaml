@@ -1,0 +1,777 @@
+# ============================================================================
+# AquaForge regAssist — Water Project Intake Questionnaire
+# Canonical schema — structure, conditions, and ontology references only
+# UI labels, help text, and placeholders belong in locale files
+# ============================================================================
+#
+# id:      water_project_intake_v2
+# version: 0.2.1
+# Changelog v2.0 → v2.1 (full audit pass — audit_questionnaire_v2.md):
+#   BUG-01: Q17 water_streams — SHOW/HIDE rules documented per option
+#   BUG-02: Q18 project_activities — SHOW/HIDE rules documented per option
+#   BUG-03: Q18 "discharge" split into direct_environmental_discharge
+#           and sewer_connection_discharge
+#   BUG-04: Q6 — new option: food_service_establishment (FOG/grease)
+#   BUG-05: Q15 — required_if extended to indirect discharge types
+#   BUG-06: Q3 — PE equivalences added (locale labels only)
+#   BUG-07: Q16 — required_if updated; optional for closed-loop only
+#   BUG-08: Q19 — mutual exclusion rule on no_groundwater_impact (frontend)
+#   BUG-09: Q6 — sewer_connection_indirect_discharge added;
+#           centralized_wwtp renamed to centralized_wwtp_operator
+#   BUG-10: Q12 — no_water_intake renamed to no_raw_water_abstraction
+
+id: water_project_intake_v2
+version: 0.2.1
+domain: water
+status: draft
+
+condition_operators:
+  - always
+  - any_selected
+  - all_selected
+  - none_selected
+  - equals
+  - not_equals
+
+question_types:
+  - multi_select
+  - radio
+  - text
+  - text_area
+
+# ── RENDERING NOTES FOR FRONTEND ─────────────────────────────────────────────
+# Q17 (water_streams) and Q18 (project_activities) require dynamic option
+# filtering based on answers to water_families, discharge_type, and
+# water_source_type. Filtering rules are documented as comments on each
+# option. The frontend (IntakeForm.jsx) and demo (index.html) implement
+# these rules in getFilteredOptions(). The canonical YAML lists ALL possible
+# options; filtering is applied at render time only.
+#
+# Q19 (groundwater_impact): no_groundwater_impact is mutually exclusive
+# with all other options. Frontend must enforce this at selection time.
+# ─────────────────────────────────────────────────────────────────────────────
+
+questions:
+
+  # ── STEP 1: Project Characterization ───────────────────────────────────────
+
+  - id: promoter_type
+    type: radio
+    required: true
+    writes_to: project.promoter_type
+    options:
+      - id: municipal
+        ontology_refs:
+          subdomains: [municipal_water_utility, public_authority]
+      - id: industrial
+        ontology_refs:
+          subdomains: [industrial_facility, manufacturing]
+      - id: private_utility
+        ontology_refs:
+          subdomains: [private_utility, concession]
+      - id: institutional
+        # NOTE: includes food service establishments (restaurants, cafeterias,
+        # hotels, commercial kitchens) — guide toward food_service_establishment
+        # sub-scope in Q6 via locale help text
+        ontology_refs:
+          subdomains: [institutional_facility]
+      - id: agricultural
+        ontology_refs:
+          subdomains: [agricultural_operator, aquaculture]
+      - id: federal_government
+        ontology_refs:
+          subdomains: [federal_agency, government_facility]
+      - id: real_estate_developer
+        ontology_refs:
+          subdomains: [land_development]
+      - id: other
+
+  - id: industrial_sector
+    type: multi_select
+    required_if:
+      equals:
+        question: promoter_type
+        value: industrial
+    writes_to: project.industrial_sector
+    options:
+      - id: food_beverage
+        ontology_refs:
+          subdomains: [food_processing, beverage_manufacturing]
+      - id: pulp_paper
+        ontology_refs:
+          subdomains: [pulp_paper, wood_processing]
+      - id: mining_metals
+        ontology_refs:
+          subdomains: [mining, mineral_processing, smelting]
+      - id: chemical_pharma
+        ontology_refs:
+          subdomains: [chemical_manufacturing, pharmaceutical]
+      - id: petroleum_refining
+        ontology_refs:
+          subdomains: [petroleum_refining, petrochemical]
+      - id: textile_tannery
+        ontology_refs:
+          subdomains: [textile_manufacturing, tannery]
+      - id: power_generation
+        ontology_refs:
+          subdomains: [power_plant, energy_production]
+      - id: semiconductor_electronics
+        ontology_refs:
+          subdomains: [semiconductor, electronics_manufacturing]
+      - id: hospital_healthcare
+        ontology_refs:
+          subdomains: [healthcare_facility, hospital_wastewater]
+      - id: other_industrial
+        ontology_refs:
+          subdomains: [industrial_facility]
+
+  - id: project_phase
+    type: radio
+    required: true
+    writes_to: project.phase
+    options:
+      - id: feasibility_predesign
+        ontology_refs:
+          subdomains: [feasibility_study, pre_design]
+      - id: detailed_design
+        ontology_refs:
+          subdomains: [detailed_design, engineering]
+      - id: new_construction
+        ontology_refs:
+          subdomains: [new_construction, greenfield]
+      - id: expansion
+        ontology_refs:
+          subdomains: [plant_expansion, capacity_upgrade]
+      - id: retrofit_upgrade
+        ontology_refs:
+          subdomains: [retrofit, rehabilitation, brownfield]
+      - id: operation
+        ontology_refs:
+          subdomains: [plant_operation, facility_management]
+      - id: decommissioning
+        ontology_refs:
+          subdomains: [decommissioning, facility_closure]
+      - id: unknown
+
+  # BUG-06: PE equivalences added in locale labels (not in canonical)
+  - id: project_capacity
+    type: radio
+    required: true
+    writes_to: project.capacity_range
+    options:
+      - id: micro
+        # < 10 m³/day — approx. < 100 PE
+        ontology_refs:
+          subdomains: [micro_scale, decentralized_system]
+      - id: small
+        # 10–500 m³/day — approx. 100–5,000 PE
+        ontology_refs:
+          subdomains: [small_scale_system]
+      - id: medium
+        # 500–10,000 m³/day — approx. 5,000–100,000 PE
+        ontology_refs:
+          subdomains: [medium_scale_system]
+      - id: large
+        # 10,000–100,000 m³/day — approx. 100,000–1,000,000 PE
+        ontology_refs:
+          subdomains: [large_scale_system]
+      - id: very_large
+        # > 100,000 m³/day — approx. > 1,000,000 PE
+        ontology_refs:
+          subdomains: [very_large_scale_system]
+      - id: unknown
+
+  # ── STEP 2: Primary Water Scopes ───────────────────────────────────────────
+
+  - id: water_families
+    type: multi_select
+    required: true
+    writes_to: classification.water_families
+    options:
+      - id: drinking_water
+        ontology_refs:
+          subdomains: [drinking_water, source_water_protection]
+      - id: municipal_wastewater
+        ontology_refs:
+          subdomains: [municipal_wastewater, sewage_treatment]
+      - id: industrial_wastewater
+        ontology_refs:
+          subdomains: [industrial_effluent, process_wastewater]
+      - id: stormwater
+        ontology_refs:
+          subdomains: [stormwater, urban_runoff]
+      - id: groundwater
+        ontology_refs:
+          subdomains: [groundwater, aquifer]
+      - id: water_reuse
+        ontology_refs:
+          subdomains: [water_reuse, reclaimed_water]
+      - id: residuals_biosolids
+        ontology_refs:
+          subdomains: [biosolids, sludge_management, residuals]
+      - id: other_unsure
+
+  # ── STEP 3: Detailed Sub-scopes ────────────────────────────────────────────
+
+  - id: drinking_water_subscopes
+    type: multi_select
+    required_if:
+      any_selected:
+        question: water_families
+        values: [drinking_water]
+    writes_to: classification.drinking_water_subscopes
+    options:
+      - id: drinking_water_treatment
+        ontology_refs:
+          use_cases: [drinking_water_treatment]
+      - id: drinking_water_distribution
+        ontology_refs:
+          use_cases: [distribution_network, water_supply_network]
+      - id: source_water_intake
+        ontology_refs:
+          use_cases: [surface_water_intake, groundwater_well]
+      - id: private_well_supply
+        ontology_refs:
+          use_cases: [private_well, small_system]
+      - id: desalination
+        ontology_refs:
+          use_cases: [desalination, seawater_treatment, brackish_water]
+
+  # BUG-04 + BUG-09: new options added; WWTP operator label clarified
+  - id: municipal_wastewater_subscopes
+    type: multi_select
+    required_if:
+      any_selected:
+        question: water_families
+        values: [municipal_wastewater]
+    writes_to: classification.municipal_wastewater_subscopes
+    options:
+      - id: domestic_residential
+        ontology_refs:
+          subdomains: [domestic_wastewater, residential_sewage]
+
+      # BUG-04: new option for food service establishments
+      - id: food_service_establishment
+        ontology_refs:
+          subdomains: [food_service_establishment, fog_program,
+                       grease_interceptor, fats_oils_grease]
+
+      - id: combined_sewer_overflow
+        ontology_refs:
+          subdomains: [combined_sewer, cso_management]
+
+      - id: hospital_wastewater
+        ontology_refs:
+          subdomains: [hospital_wastewater, pharmaceutical_micropollutants]
+
+      # BUG-09: new option — sewer connection (NOT WWTP operator)
+      - id: sewer_connection_indirect_discharge
+        ontology_refs:
+          subdomains: [indirect_discharge, sewer_connection,
+                       municipal_sewer_user]
+
+      # BUG-09: relabeled — explicit that this = WWTP operator only
+      - id: centralized_wwtp_operator
+        ontology_refs:
+          use_cases: [municipal_wwtp, centralized_treatment]
+
+      - id: pretreatment_to_sewer
+        ontology_refs:
+          use_cases: [industrial_pretreatment, indirect_discharge]
+
+      - id: decentralized_onsite
+        ontology_refs:
+          use_cases: [onsite_septic, decentralized_treatment, package_plant]
+
+      - id: land_application
+        ontology_refs:
+          use_cases: [effluent_land_application, biosolids_land_application]
+
+      - id: direct_environmental_discharge
+        ontology_refs:
+          use_cases: [effluent_discharge, direct_discharge]
+
+  - id: industrial_wastewater_subscopes
+    type: multi_select
+    required_if:
+      any_selected:
+        question: water_families
+        values: [industrial_wastewater]
+    writes_to: classification.industrial_wastewater_subscopes
+    options:
+      - id: process_effluent_direct_discharge
+        ontology_refs:
+          use_cases: [industrial_effluent_discharge, direct_discharge]
+      - id: process_effluent_to_sewer
+        ontology_refs:
+          use_cases: [industrial_pretreatment, sewer_connection]
+      - id: cooling_water_blowdown
+        ontology_refs:
+          use_cases: [cooling_water_discharge, thermal_discharge]
+      - id: landfill_leachate
+        ontology_refs:
+          use_cases: [leachate_treatment, contaminated_site]
+      - id: agricultural_runoff_return
+        ontology_refs:
+          use_cases: [agricultural_runoff, irrigation_return_flow]
+      - id: aquaculture_effluent
+        ontology_refs:
+          use_cases: [aquaculture_effluent, fish_farm_discharge]
+
+  - id: stormwater_subscopes
+    type: multi_select
+    required_if:
+      any_selected:
+        question: water_families
+        values: [stormwater]
+    writes_to: classification.stormwater_subscopes
+    options:
+      - id: urban_stormwater_management
+        ontology_refs:
+          subdomains: [urban_stormwater_management, green_infrastructure]
+      - id: construction_site_runoff
+        ontology_refs:
+          subdomains: [construction_stormwater, erosion_control]
+      - id: agricultural_stormwater
+        ontology_refs:
+          subdomains: [agricultural_runoff, cafo_afo_stormwater]
+      - id: industrial_site_stormwater
+        ontology_refs:
+          subdomains: [industrial_stormwater, spill_prevention]
+
+  - id: groundwater_subscopes
+    type: multi_select
+    required_if:
+      any_selected:
+        question: water_families
+        values: [groundwater]
+    writes_to: classification.groundwater_subscopes
+    options:
+      - id: groundwater_extraction_well
+        ontology_refs:
+          use_cases: [groundwater_extraction, well_pump]
+      - id: managed_aquifer_recharge
+        ontology_refs:
+          use_cases: [managed_aquifer_recharge, artificial_recharge]
+      - id: groundwater_remediation
+        ontology_refs:
+          use_cases: [groundwater_remediation, pump_and_treat]
+      - id: dewatering_excavation
+        ontology_refs:
+          use_cases: [groundwater_dewatering, construction_dewatering]
+      - id: injection_well
+        ontology_refs:
+          use_cases: [injection_well, subsurface_disposal]
+
+  - id: water_reuse_subscopes
+    type: multi_select
+    required_if:
+      any_selected:
+        question: water_families
+        values: [water_reuse]
+    writes_to: classification.water_reuse_subscopes
+    options:
+      - id: indirect_potable_reuse
+        ontology_refs:
+          use_cases: [indirect_potable_reuse, environmental_buffer]
+      - id: direct_potable_reuse
+        ontology_refs:
+          use_cases: [direct_potable_reuse]
+      - id: non_potable_irrigation
+        ontology_refs:
+          use_cases: [agricultural_reuse, irrigation_reuse]
+      - id: non_potable_industrial
+        ontology_refs:
+          use_cases: [industrial_reuse, process_water_reuse]
+      - id: non_potable_urban
+        ontology_refs:
+          use_cases: [urban_reuse, non_potable_urban]
+
+  - id: residuals_subscopes
+    type: multi_select
+    required_if:
+      any_selected:
+        question: water_families
+        values: [residuals_biosolids]
+    writes_to: classification.residuals_subscopes
+    options:
+      - id: biosolids_land_application
+        ontology_refs:
+          use_cases: [biosolids_land_application, agronomic_application]
+      - id: biosolids_landfill
+        ontology_refs:
+          use_cases: [biosolids_disposal, sludge_landfill]
+      - id: thermal_drying_incineration
+        ontology_refs:
+          use_cases: [sludge_incineration, thermal_drying]
+      - id: sludge_composting
+        ontology_refs:
+          use_cases: [sludge_composting, anaerobic_digestion]
+      - id: spent_filter_media_resin
+        ontology_refs:
+          use_cases: [spent_media_disposal, spent_resin_management]
+
+  # ── STEP 4: Source & Receiving Environment ─────────────────────────────────
+
+  # BUG-10: no_water_intake renamed to no_raw_water_abstraction
+  - id: water_source_type
+    type: multi_select
+    required: true
+    writes_to: project.water_source
+    options:
+      - id: river_stream
+        ontology_refs:
+          subdomains: [surface_water, river, flowing_water]
+      - id: lake_reservoir
+        ontology_refs:
+          subdomains: [surface_water, lake, reservoir]
+      - id: large_lake_system
+        ontology_refs:
+          subdomains: [large_lake, transboundary_water]
+      - id: ocean_coastal
+        ontology_refs:
+          subdomains: [seawater, coastal_water, estuarine_water]
+      - id: confined_aquifer
+        ontology_refs:
+          subdomains: [confined_aquifer, artesian_water]
+      - id: unconfined_aquifer
+        ontology_refs:
+          subdomains: [unconfined_aquifer, phreatic_water]
+      - id: municipal_supply
+        ontology_refs:
+          subdomains: [municipal_water_supply, treated_water]
+      - id: rainwater_harvesting
+        ontology_refs:
+          subdomains: [rainwater_harvesting, precipitation]
+      # BUG-10: relabeled for clarity
+      - id: no_raw_water_abstraction
+        ontology_refs:
+          subdomains: [no_water_intake, discharge_only_project]
+
+  - id: discharge_type
+    type: multi_select
+    required: true
+    writes_to: classification.discharge_type
+    options:
+      - id: direct_surface_water
+        ontology_refs:
+          subdomains: [direct_discharge, surface_water_discharge]
+      - id: direct_groundwater
+        ontology_refs:
+          subdomains: [groundwater_discharge, subsurface_injection]
+      - id: indirect_sanitary_sewer
+        ontology_refs:
+          subdomains: [indirect_discharge, sanitary_sewer_connection]
+      - id: indirect_storm_sewer
+        ontology_refs:
+          subdomains: [stormwater_sewer, combined_sewer_connection]
+      - id: land_application
+        ontology_refs:
+          subdomains: [land_application, soil_treatment]
+      - id: reuse_on_site
+        ontology_refs:
+          subdomains: [on_site_reuse, closed_loop]
+      - id: hauled_offsite_treatment
+        ontology_refs:
+          subdomains: [waste_hauling, off_site_treatment]
+      - id: no_discharge_closed_loop
+        ontology_refs:
+          subdomains: [zero_liquid_discharge, closed_loop_system]
+      - id: unknown_to_determine
+
+  - id: receiving_environment_type
+    type: multi_select
+    required_if:
+      any_selected:
+        question: discharge_type
+        values: [direct_surface_water, direct_groundwater]
+    writes_to: project.receiving_environment.type
+    options:
+      - id: perennial_river_stream
+        ontology_refs:
+          subdomains: [river, perennial_stream]
+      - id: intermittent_seasonal_stream
+        ontology_refs:
+          subdomains: [intermittent_stream, ephemeral_watercourse]
+      - id: natural_lake
+        ontology_refs:
+          subdomains: [lake, natural_lake]
+      - id: large_lake_system
+        ontology_refs:
+          subdomains: [large_lake, transboundary_water_body]
+      - id: drinking_water_reservoir
+        ontology_refs:
+          subdomains: [drinking_water_reservoir, protected_catchment]
+      - id: coastal_marine_estuarine
+        ontology_refs:
+          subdomains: [marine_water, coastal_zone, estuary]
+      - id: wetland_marsh_bog
+        ontology_refs:
+          subdomains: [wetland, marsh, peatland]
+      - id: groundwater_aquifer
+        ontology_refs:
+          subdomains: [aquifer, groundwater_body]
+      - id: auto_detected
+
+  # BUG-05: required_if extended to include indirect discharge types
+  - id: downstream_drinking_water_intake
+    type: radio
+    required_if:
+      any_selected:
+        question: discharge_type
+        values: [direct_surface_water, indirect_sanitary_sewer,
+                 indirect_storm_sewer]
+    writes_to: project.receiving_environment.downstream_intake
+    # NOTE: locale labels must distinguish between:
+    # - direct discharge: "Is there a DW intake downstream of the discharge point?"
+    # - indirect discharge: "Does the receiving WWTP discharge to a watercourse
+    #   with a downstream DW intake?"
+    options:
+      - id: yes_confirmed
+        ontology_refs:
+          subdomains: [source_water_protection, intake_zone]
+      - id: yes_suspected
+        ontology_refs:
+          subdomains: [source_water_assessment]
+      - id: no
+      - id: unknown
+
+  # BUG-07: now conditional — required only when external discharge pathway exists
+  - id: sensitive_zones
+    type: multi_select
+    required_if:
+      any_selected:
+        question: discharge_type
+        values: [direct_surface_water, direct_groundwater,
+                 indirect_sanitary_sewer, indirect_storm_sewer,
+                 land_application, hauled_offsite_treatment]
+    # required: false when discharge_type = reuse_on_site or
+    # no_discharge_closed_loop only
+    writes_to: project.sensitive_zones
+    options:
+      - id: drinking_water_source_protection_area
+        ontology_refs:
+          subdomains: [source_water_protection, wellhead_protection]
+      - id: protected_biodiversity_habitat
+        ontology_refs:
+          subdomains: [protected_area, biodiversity_zone, habitat_protection]
+      - id: fish_aquatic_habitat
+        ontology_refs:
+          subdomains: [fish_habitat, aquatic_ecosystem, sensitive_aquatic_species]
+      - id: wetland_protected
+        ontology_refs:
+          subdomains: [protected_wetland, ramsar_type_zone]
+      - id: drinking_water_watershed
+        ontology_refs:
+          subdomains: [watershed_protection, catchment_management]
+      - id: floodplain_flood_risk_zone
+        ontology_refs:
+          subdomains: [floodplain, flood_risk_area]
+      - id: transboundary_shared_water_body
+        ontology_refs:
+          subdomains: [transboundary_water, shared_water_body]
+      - id: indigenous_traditional_territory
+        ontology_refs:
+          subdomains: [indigenous_territory, traditional_land, duty_to_consult]
+      - id: none_identified
+      - id: unknown
+
+  # ── STEP 5: Streams, Activities & Groundwater ──────────────────────────────
+
+  # BUG-01: All options listed; frontend applies SHOW/HIDE rules per option
+  # based on water_families + discharge_type + water_source_type answers.
+  # See IntakeForm.jsx getFilteredOptions() for implementation.
+  - id: water_streams
+    type: multi_select
+    required: true
+    writes_to: classification.water_streams
+    options:
+      # INPUTS
+      - id: raw_water
+        # SHOW IF: drinking_water OR (industrial_wastewater AND source ≠ municipal_supply_only)
+        ontology_refs:
+          subdomains: [raw_water, influent, source_water]
+
+      - id: raw_wastewater
+        # SHOW IF: municipal_wastewater OR industrial_wastewater
+        # HIDE IF: drinking_water only OR indirect_discharge only without WW scope
+        ontology_refs:
+          subdomains: [raw_wastewater, sewage_influent]
+
+      - id: industrial_process_water
+        # SHOW IF: industrial_wastewater selected
+        ontology_refs:
+          subdomains: [process_water, industrial_influent]
+
+      # INTERNAL PROCESS STREAMS
+      - id: filter_backwash_water
+        # SHOW IF: drinking_water OR municipal_wastewater (treatment plant operator)
+        ontology_refs:
+          subdomains: [filter_backwash, process_residuals]
+
+      - id: membrane_concentrate_ro_reject
+        # SHOW IF: drinking_water OR water_reuse OR industrial_wastewater
+        ontology_refs:
+          subdomains: [membrane_concentrate, ro_reject, brine_disposal]
+
+      - id: recycled_process_water
+        # SHOW IF: drinking_water OR municipal_wastewater OR industrial_wastewater
+        ontology_refs:
+          subdomains: [process_recycle, internal_recirculation]
+
+      - id: disinfection_byproduct_streams
+        # SHOW IF: drinking_water OR municipal_wastewater (WWTP operator)
+        ontology_refs:
+          subdomains: [disinfection_byproducts, dbp_management]
+
+      - id: cooling_water
+        # SHOW IF: industrial_wastewater OR power_generation sector
+        ontology_refs:
+          subdomains: [cooling_water, thermal_stream]
+
+      # OUTPUTS
+      - id: treated_drinking_water
+        # SHOW IF: drinking_water selected
+        ontology_refs:
+          subdomains: [finished_water, potable_water, drinking_water_effluent]
+
+      - id: treated_wastewater_effluent
+        # SHOW IF: (municipal_wastewater OR industrial_wastewater) AND
+        #          (direct_surface_water OR water_reuse OR land_application)
+        # HIDE IF: indirect_sanitary_sewer only (effluent goes to sewer)
+        ontology_refs:
+          subdomains: [treated_effluent, final_effluent, wwtp_effluent]
+
+      - id: sludge_biosolids
+        # SHOW IF: municipal_wastewater OR drinking_water OR industrial_wastewater
+        #          OR residuals_biosolids
+        ontology_refs:
+          subdomains: [sludge, biosolids, treatment_residuals]
+
+      - id: spent_filter_media_resin
+        # SHOW IF: drinking_water OR municipal_wastewater OR industrial_wastewater
+        ontology_refs:
+          subdomains: [spent_media, spent_resin, solid_residuals]
+
+      - id: stormwater_site_runoff
+        # SHOW IF: stormwater OR industrial_wastewater OR municipal_wastewater
+        ontology_refs:
+          subdomains: [stormwater, site_runoff, facility_drainage]
+
+      - id: leachate
+        # SHOW IF: residuals_biosolids OR industrial_wastewater OR groundwater
+        ontology_refs:
+          subdomains: [leachate, landfill_leachate]
+
+  # BUG-02 + BUG-03: filtered options + discharge split into direct/indirect
+  - id: project_activities
+    type: multi_select
+    required: true
+    writes_to: classification.project_activities
+    options:
+      - id: water_abstraction_withdrawal
+        # SHOW IF: source includes raw water types (river, lake, aquifer, ocean...)
+        # HIDE IF: source = municipal_supply only
+        ontology_refs:
+          use_cases: [water_abstraction, water_withdrawal]
+
+      - id: pretreatment
+        # SHOW IF: always (applicable to any project)
+        ontology_refs:
+          use_cases: [pretreatment, primary_treatment, grease_interceptor]
+
+      - id: treatment
+        # SHOW IF: always
+        ontology_refs:
+          use_cases: [water_treatment, secondary_treatment]
+
+      - id: advanced_treatment
+        # SHOW IF: drinking_water OR municipal_wastewater OR water_reuse
+        #          OR industrial_wastewater
+        # HIDE IF: pure sewer connection, small septic only
+        ontology_refs:
+          use_cases: [advanced_treatment, tertiary_treatment, membrane_filtration]
+
+      - id: storage
+        # SHOW IF: always
+        ontology_refs:
+          use_cases: [water_storage, effluent_storage, storage_tank]
+
+      - id: collection_conveyance
+        # SHOW IF: municipal_wastewater AND centralized_wwtp_operator, OR
+        #          drinking_water AND drinking_water_distribution
+        # HIDE IF: facility is sewer USER only (not network operator)
+        ontology_refs:
+          use_cases: [collection_system, conveyance, pumping_station]
+
+      # BUG-03: split from generic "discharge" — environmental release only
+      - id: direct_environmental_discharge
+        # SHOW IF: discharge_type includes direct_surface_water,
+        #          direct_groundwater, or land_application
+        # HIDE IF: indirect discharge only
+        ontology_refs:
+          use_cases: [effluent_discharge, direct_environmental_release]
+
+      # BUG-03: new option — sewer connection discharge
+      - id: sewer_connection_discharge
+        # SHOW IF: discharge_type includes indirect_sanitary_sewer
+        #          or indirect_storm_sewer
+        # HIDE IF: direct discharge only, closed loop, reuse only
+        ontology_refs:
+          use_cases: [indirect_discharge, sewer_connection,
+                      pretreatment_discharge]
+
+      - id: reuse
+        # SHOW IF: water_reuse in water_families OR reuse_on_site in discharge_type
+        ontology_refs:
+          use_cases: [water_reuse, reclaimed_water_supply]
+
+      - id: residuals_management
+        # SHOW IF: municipal_wastewater OR drinking_water OR industrial_wastewater
+        #          OR residuals_biosolids
+        # HIDE IF: pure sewer connection without on-site treatment
+        ontology_refs:
+          use_cases: [residuals_management, sludge_handling, dewatering]
+
+      - id: monitoring_reporting
+        # SHOW IF: always
+        ontology_refs:
+          use_cases: [effluent_monitoring, compliance_reporting, self_monitoring]
+
+  # BUG-08: mutual exclusion rule on no_groundwater_impact
+  - id: groundwater_impact
+    type: multi_select
+    required: true
+    writes_to: classification.groundwater_impact
+    # FRONTEND RULE (BUG-08): no_groundwater_impact is mutually exclusive
+    # with all other options. Selecting it must deselect all "Yes" options.
+    # Selecting any "Yes" option must deselect no_groundwater_impact.
+    options:
+      - id: groundwater_withdrawal_well
+        ontology_refs:
+          use_cases: [groundwater_extraction, well_permit]
+      - id: infiltration_recharge
+        ontology_refs:
+          use_cases: [managed_aquifer_recharge, infiltration_basin]
+      - id: onsite_septic_subsurface
+        ontology_refs:
+          use_cases: [onsite_septic, subsurface_dispersal]
+      - id: land_application_leaching
+        ontology_refs:
+          use_cases: [land_application, percolation_risk]
+      - id: dewatering_remediation
+        ontology_refs:
+          use_cases: [groundwater_dewatering, aquifer_remediation]
+      - id: leachate_residuals_risk
+        ontology_refs:
+          use_cases: [leachate_risk, groundwater_contamination_risk]
+      - id: no_groundwater_impact
+        # MUTUALLY EXCLUSIVE with all above options (BUG-08)
+        # Frontend must enforce: selecting this deselects all "Yes" options
+        ontology_refs:
+          subdomains: [no_groundwater_pathway]
+
+  - id: project_free_description
+    type: text_area
+    required: false
+    writes_to: project.free_description
