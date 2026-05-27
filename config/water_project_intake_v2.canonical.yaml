@@ -5,23 +5,16 @@
 # ============================================================================
 #
 # id:      water_project_intake_v2
-# version: 0.2.1
+# version: 0.2.2
 # Changelog v2.0 → v2.1 (full audit pass — audit_questionnaire_v2.md):
-#   BUG-01: Q17 water_streams — SHOW/HIDE rules documented per option
-#   BUG-02: Q18 project_activities — SHOW/HIDE rules documented per option
-#   BUG-03: Q18 "discharge" split into direct_environmental_discharge
-#           and sewer_connection_discharge
-#   BUG-04: Q6 — new option: food_service_establishment (FOG/grease)
-#   BUG-05: Q15 — required_if extended to indirect discharge types
-#   BUG-06: Q3 — PE equivalences added (locale labels only)
-#   BUG-07: Q16 — required_if updated; optional for closed-loop only
-#   BUG-08: Q19 — mutual exclusion rule on no_groundwater_impact (frontend)
-#   BUG-09: Q6 — sewer_connection_indirect_discharge added;
-#           centralized_wwtp renamed to centralized_wwtp_operator
-#   BUG-10: Q12 — no_water_intake renamed to no_raw_water_abstraction
+#   BUG-01 through BUG-11: see audit_questionnaire_v2.md
+# Changelog v2.1 → v2.1.2:
+#   BUG-12-A: canonical ID vs UI visible counter — distinction documented
+#   BUG-12-B: raw_wastewater — label_context added for decentralized_onsite
+#   BUG-12-C: STEP 3 subscope ordering rule documented (frontend enforcement)
 
 id: water_project_intake_v2
-version: 0.2.1
+version: 0.2.2
 domain: water
 status: draft
 
@@ -222,6 +215,17 @@ questions:
       - id: other_unsure
 
   # ── STEP 3: Detailed Sub-scopes ────────────────────────────────────────────
+  #
+  # SUBSCOPE ORDERING RULE (BUG-12-C):
+  # Sub-scope questions are rendered in the order the user selected their parent
+  # scope in Q4 (water_families). This is a FRONTEND rule — canonical YAML lists
+  # subscopes in a fixed default order; the frontend sorts them at render time.
+  # Mapping: SUBSCOPE_FAMILY_MAP in visibleQ() / visibleQuestions().
+  #
+  # CANONICAL ID vs UI COUNTER (BUG-12-A):
+  # These questions have stable canonical IDs (drinking_water_subscopes … residuals_subscopes).
+  # The UI displays a dynamic visible-question counter (1 of N) that varies by
+  # selection context. Always use canonical IDs in cross-file references.
 
   - id: drinking_water_subscopes
     type: multi_select
@@ -605,6 +609,14 @@ questions:
       - id: raw_wastewater
         # SHOW IF: municipal_wastewater OR industrial_wastewater
         # HIDE IF: drinking_water only OR indirect_discharge only without WW scope
+        # LABEL CONTEXT (BUG-12-B): context-aware label applied at render time
+        #   Condition: decentralized_onsite in municipal_wastewater_subscopes
+        #              AND centralized_wwtp_operator NOT in municipal_wastewater_subscopes
+        #   → label_key: raw_wastewater_decentralized (locale file)
+        #   → "Raw wastewater (septic tank influent / household sewage)"
+        #   Otherwise (default):
+        #   → label_key: raw_wastewater
+        #   → "Raw wastewater (WWTP influent — incoming sewage to treatment plant)"
         ontology_refs:
           subdomains: [raw_wastewater, sewage_influent]
 

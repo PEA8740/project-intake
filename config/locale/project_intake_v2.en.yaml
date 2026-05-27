@@ -11,6 +11,9 @@
 #   BUG-08: help text updated for groundwater_impact (mutual exclusion)
 #   BUG-09: centralized_wwtp_operator relabeled; sewer_connection_indirect_discharge added
 #   BUG-10: no_raw_water_abstraction relabeled
+#   BUG-12-B: raw_wastewater — two label variants added:
+#             raw_wastewater (default, WWTP influent context)
+#             raw_wastewater_decentralized (septic tank / onsite context)
 
 locale: en
 questionnaire_id: water_project_intake_v2
@@ -364,6 +367,11 @@ questions:
     options:
       raw_water: "Raw water (surface or groundwater before any treatment)"
       raw_wastewater: "Raw wastewater (WWTP influent — incoming sewage to treatment plant)"
+      # BUG-12-B: contextual label for decentralized / on-site treatment projects
+      # Applied by getLabelOverrides() when:
+      #   municipal_wastewater_subscopes includes decentralized_onsite
+      #   AND does NOT include centralized_wwtp_operator
+      raw_wastewater_decentralized: "Raw wastewater (septic tank influent / household sewage)"
       industrial_process_water: "Industrial process water (incoming to facility)"
       filter_backwash_water: "Filter backwash water (rapid sand filters,
                               ultrafiltration, membrane backwash)"

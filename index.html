@@ -6,8 +6,8 @@
 <title>AquaForge — Water Project Intake v2.1</title>
 <!--
   AquaForge regAssist — Water Project Intake Questionnaire
-  Version: 2.1.0 (standalone demo)
-  Bugs fixed: BUG-01 through BUG-10 (see audit_questionnaire_v2.md)
+  Version: 2.1.2 (standalone demo)
+  Bugs fixed: BUG-01 through BUG-12 (see audit_questionnaire_v2.md)
 -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -92,7 +92,7 @@ textarea:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95
   <span class="loc-pill" id="coordPill">📍 43.6535, -79.3839</span>
   <button class="btn-confirm" id="btnConfirmLoc" onclick="confirmLocation()">✓ Confirm location</button>
   <span class="loc-status unconfirmed" id="locStatus">⚠ Location not confirmed</span>
-  <span class="version-badge">v2.1.1</span>
+  <span class="version-badge">v2.1.2</span>
 </div>
 
 <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
@@ -547,6 +547,33 @@ function confirmAfterGeocode(name, lat, lng){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// BUG-12-C: SUBSCOPE FAMILY MAP
+// ═══════════════════════════════════════════════════════════════════════════════
+const SUBSCOPE_FAMILY_MAP = {
+  drinking_water_subscopes:        'drinking_water',
+  municipal_wastewater_subscopes:  'municipal_wastewater',
+  industrial_wastewater_subscopes: 'industrial_wastewater',
+  stormwater_subscopes:            'stormwater',
+  groundwater_subscopes:           'groundwater',
+  water_reuse_subscopes:           'water_reuse',
+  residuals_subscopes:             'residuals_biosolids'
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BUG-12-B: CONTEXTUAL LABEL OVERRIDES
+// ═══════════════════════════════════════════════════════════════════════════════
+function getLabelOverrides(qId){
+  if(qId!=='water_streams')return {};
+  const mwwSub=answers['municipal_wastewater_subscopes']||[];
+  const isDecentralized=mwwSub.includes('decentralized_onsite')
+                      &&!mwwSub.includes('centralized_wwtp_operator');
+  if(isDecentralized){
+    return {raw_wastewater:'Raw wastewater (septic tank influent / household sewage)'};
+  }
+  return {};
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // CONDITION ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 function isVisible(q){
@@ -560,7 +587,18 @@ function isVisible(q){
   if(c.none_selected){const s=answers[c.none_selected.question]||[];return!c.none_selected.values.some(v=>s.includes(v));}
   return true;
 }
-function visibleQ(){return SCHEMA.questions.filter(isVisible);}
+function visibleQ(){
+  const visible=SCHEMA.questions.filter(isVisible);
+  const families=answers['water_families']||[];
+  if(!families.length)return visible;
+  // BUG-12-C: stable sort — reorders only subscope questions by selection order
+  return [...visible].sort((a,b)=>{
+    const fa=SUBSCOPE_FAMILY_MAP[a.id];
+    const fb=SUBSCOPE_FAMILY_MAP[b.id];
+    if(fa&&fb)return families.indexOf(fa)-families.indexOf(fb);
+    return 0;
+  });
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BUG-01 + BUG-02: DYNAMIC OPTION FILTERING
@@ -594,7 +632,7 @@ function getFilteredOptions(q){
   const isNetOp=mwwSub.includes('centralized_wwtp_operator')||dwSub.includes('drinking_water_distribution');
 
   if(q.id==='water_streams'){
-    return q.options.filter(o=>{
+    const filtered=q.options.filter(o=>{
       switch(o.id){
         case'raw_water':              return hasDW||(hasIWW&&!onMunOnly);
         case'raw_wastewater':         return hasMWW||hasIWW;
@@ -613,6 +651,11 @@ function getFilteredOptions(q){
         default:return true;
       }
     });
+    // BUG-12-B: apply contextual label overrides
+    const overrides=getLabelOverrides(q.id);
+    return Object.keys(overrides).length===0
+      ? filtered
+      : filtered.map(o=>overrides[o.id]?{...o,label:overrides[o.id]}:o);
   }
 
   if(q.id==='project_activities'){

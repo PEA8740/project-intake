@@ -300,6 +300,10 @@ distribution network or other utility"
 | BUG-07 | Q16 sensitive zones always required | MINOR | P3 |
 | BUG-08 | Q19 "No groundwater" not mutually exclusive | MINOR | P3 |
 | BUG-10 | Q12 "No water intake" label misleading | MINOR | P3 |
+| BUG-11 | Location not enforced at submit | MAJOR | P3 (post-deploy) |
+| BUG-12-A | Canonical ID vs UI counter — test methodology confusion | DOCUMENTATION | — |
+| BUG-12-B | Q17 raw_wastewater label misleading for septic/onsite projects | MEDIUM | P3 |
+| BUG-12-C | STEP 3 subscopes in fixed schema order instead of selection order | MEDIUM | P3 |
 
 ### Correction roadmap
 
@@ -318,6 +322,10 @@ distribution network or other utility"
 - BUG-07: Make Q16 conditional for indirect-only projects
 - BUG-08: Mutual exclusion logic for Q19 groundwater
 - BUG-10: Clarify Q12 "No raw water abstraction" label
+- BUG-11: Location soft-start + hard-block at submit
+- BUG-12-A: Documentation convention (no code change)
+- BUG-12-B: Contextual label for raw_wastewater in septic/decentralized projects
+- BUG-12-C: STEP 3 subscope order aligned to user selection order
 
 ---
 
@@ -362,3 +370,126 @@ unusable for regulatory identification.
 **writes_to:** project.location.confirmed (boolean),
               project.location.name (string),
               project.location.coordinates (lat, lng)
+
+---
+
+### BUG-12-A — Canonical ID vs UI visible counter: source of test confusion
+**Severity: DOCUMENTATION**
+**Affected profiles: All (test methodology)**
+**Discovered: P5 simulation session**
+
+**Problem:**
+During manual simulation of Use Case P5 (decentralized septic), test navigation
+was documented using the UI visible question counter (e.g., "Question 5 of 7")
+rather than canonical question IDs (e.g., `municipal_wastewater_subscopes`).
+
+The UI counter is a dynamic value that depends on which questions are visible at
+any given moment — it changes based on user selections. For example:
+
+- If `drinking_water` is NOT selected (P5), then `drinking_water_subscopes` is
+  hidden. The UI displays `municipal_wastewater_subscopes` as "Question 5" even
+  though its canonical ID is Q6 in the schema ordering.
+- If `drinking_water` IS selected, `drinking_water_subscopes` appears first, and
+  `municipal_wastewater_subscopes` becomes "Question 6".
+
+Using UI counters as stable identifiers in test scripts or cross-file references
+creates confusion and documentation errors.
+
+**Required fix:**
+1. plan_questions.md: add explicit note distinguishing canonical IDs from UI counter
+2. canonical.yaml: add comment in STEP 3 section
+3. audit_questionnaire_v2.md: add this entry
+4. Testing convention: always reference questions by canonical ID in test scripts.
+   Format: `[canonical_id]` e.g., `[municipal_wastewater_subscopes]`, not "Q5" or
+   "Question 5".
+
+**No code change required.** Documentation and convention fix only.
+
+---
+
+### BUG-12-B — Q17 raw_wastewater: label misleading for decentralized / septic projects
+**Severity: MEDIUM**
+**Affected profiles: P5 (decentralized septic) and any decentralized_onsite project**
+**Discovered: P5 simulation session**
+
+**Problem:**
+The option `raw_wastewater` in Q17 (water_streams) is visible when `hasMWW = true`,
+which includes projects with `decentralized_onsite` selected in
+`municipal_wastewater_subscopes`. Its static label is:
+
+  "Raw wastewater (WWTP influent — incoming sewage to treatment plant)"
+
+For a septic tank or package plant project, this label is semantically incorrect:
+- A septic tank does not receive "WWTP influent" — it receives household sewage
+  directly. There is no WWTP in a decentralized on-site system.
+- The label incorrectly implies the user is declaring an influent stream to a
+  centralized treatment plant, which may distort the regulatory classification.
+
+**Required fix:**
+Apply a contextual label override at render time based on `municipal_wastewater_subscopes`:
+
+| Context | Condition | Label |
+|---------|-----------|-------|
+| Centralized / default | `centralized_wwtp_operator` selected OR `decentralized_onsite` not selected | "Raw wastewater (WWTP influent — incoming sewage to treatment plant)" |
+| Decentralized / on-site | `decentralized_onsite` selected AND `centralized_wwtp_operator` NOT selected | "Raw wastewater (septic tank influent / household sewage)" |
+
+**Files changed:**
+1. plan_questions.md — label_context documented for raw_wastewater
+2. canonical.yaml — label_context comment added to raw_wastewater option
+3. en.yaml — new key: `raw_wastewater_decentralized` added under water_streams.options
+4. audit_questionnaire_v2.md — this entry
+5. IntakeForm.jsx — `getLabelOverrides(qId, answers)` added; `getFilteredOptions()` applies `.map()` override
+6. index.html — same as IntakeForm.jsx (standalone demo)
+
+**intake_router.py:** No change needed. Label context is a frontend rendering concern.
+The router returns the base `raw_wastewater` label from locale; the frontend overrides it.
+
+---
+
+### BUG-12-C — STEP 3 sub-scopes: rendered in fixed schema order, not user selection order
+**Severity: MEDIUM**
+**Affected profiles: All multi-scope projects (P2, P4, any project with 2+ water families)**
+**Discovered: P5 simulation session**
+
+**Problem:**
+The documented rule in plan_questions.md states:
+  "For each scope checked in STEP 2, one dedicated sub-scope question is
+   generated in the exact order the user selected it."
+
+However, `visibleQ()` (index.html) and `visibleQuestions()` (IntakeForm.jsx) both
+return `SCHEMA.questions.filter(isVisible)`, which preserves the **fixed schema
+order** — not the user's selection order from Q4.
+
+Example: If a user selects `municipal_wastewater` first, then `drinking_water`, the
+UI shows `drinking_water_subscopes` before `municipal_wastewater_subscopes` (schema
+order), ignoring the declared selection order.
+
+This violates the documented UX contract and creates a disconnect between the scope
+selection in STEP 2 and the sub-scope sequence in STEP 3.
+
+**Required fix:**
+After filtering visible questions, sort sub-scope questions by the index of their
+parent family in `answers['water_families']`. A `SUBSCOPE_FAMILY_MAP` constant
+provides the mapping. Non-subscope questions preserve their original relative order
+(stable sort guarantee in ES2019+).
+
+```
+SUBSCOPE_FAMILY_MAP = {
+  drinking_water_subscopes:        'drinking_water',
+  municipal_wastewater_subscopes:  'municipal_wastewater',
+  industrial_wastewater_subscopes: 'industrial_wastewater',
+  stormwater_subscopes:            'stormwater',
+  groundwater_subscopes:           'groundwater',
+  water_reuse_subscopes:           'water_reuse',
+  residuals_subscopes:             'residuals_biosolids'
+}
+```
+
+**Files changed:**
+1. plan_questions.md — BUG-12-C fix note added to STEP 3
+2. canonical.yaml — ordering rule comment added to STEP 3 section
+3. audit_questionnaire_v2.md — this entry
+4. IntakeForm.jsx — `SUBSCOPE_FAMILY_MAP` + `visibleQuestions()` sort updated
+5. index.html — `SUBSCOPE_FAMILY_MAP` + `visibleQ()` sort updated
+
+**intake_router.py:** No change needed. Schema ordering is a frontend concern.

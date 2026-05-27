@@ -1,7 +1,7 @@
 """
 AquaForge regAssist — Intake Questionnaire API Router
 File: intake_router.py
-Version: 2.1.0
+Version: 2.1.2
 
 Changelog v2.0 → v2.1:
   BUG-03: classification maps new option IDs (direct_environmental_discharge,
@@ -12,6 +12,19 @@ Changelog v2.0 → v2.1:
   BUG-10: no_raw_water_abstraction recognized (renamed from no_water_intake)
   General: schema validation added to POST /intake/submit
            cache invalidation endpoint added for development
+
+Changelog v2.1 → v2.1.2:
+  BUG-12-A: No code change. Canonical ID vs UI counter distinction is a
+            documentation/convention issue. See audit_questionnaire_v2.md.
+  BUG-12-B: No code change. Label override for raw_wastewater (decentralized
+            context) is a frontend rendering concern. The router returns the
+            base label from locale; getLabelOverrides() in the frontend applies
+            the contextual override. The locale file (en.yaml) now contains
+            raw_wastewater_decentralized as an additional key.
+  BUG-12-C: No code change. Sub-scope ordering by water_families selection order
+            is a frontend rendering concern. The router returns questions in
+            canonical schema order; visibleQ() / visibleQuestions() in the
+            frontend sort subscopes using SUBSCOPE_FAMILY_MAP.
 """
 
 from fastapi import APIRouter, HTTPException, Query
