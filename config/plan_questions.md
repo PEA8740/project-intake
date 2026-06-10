@@ -1,5 +1,5 @@
 # plan_questions.md — AquaForge regAssist Intake Questionnaire v2.1
-# Corrected version — Full audit pass (BUG-01 to BUG-13)
+# Corrected version — Full audit pass (BUG-01 to BUG-14)
 # Ref: audit_questionnaire_v2.md
 
 ## Changelog v2.0 → v2.1
@@ -18,6 +18,8 @@
 # BUG-12-C: STEP 3 sub-scope ordering — now rendered in water_families selection order
 # BUG-13: Q13 discharge_type — hard block removed for distribution-only DW projects
 #          required: true → required: false (conditional); new option not_applicable_supply_only
+# BUG-14: Q17 water_streams + Q18 project_activities — treatment-plant streams/activities
+#          hidden for distribution-only DW projects (hasDWTreatment flag)
 
 ---
 

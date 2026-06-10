@@ -92,7 +92,7 @@ textarea:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95
   <span class="loc-pill" id="coordPill">📍 43.6535, -79.3839</span>
   <button class="btn-confirm" id="btnConfirmLoc" onclick="confirmLocation()">✓ Confirm location</button>
   <span class="loc-status unconfirmed" id="locStatus">⚠ Location not confirmed</span>
-  <span class="version-badge">v2.1.3</span>
+  <span class="version-badge">v2.1.4</span>
 </div>
 
 <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
@@ -652,21 +652,28 @@ function getFilteredOptions(q){
 
   const isNetOp=mwwSub.includes('centralized_wwtp_operator')||dwSub.includes('drinking_water_distribution');
 
+  // BUG-14: true only when project includes a DW treatment plant or desalination unit
+  // (not for distribution-only or raw-intake-only projects)
+  const DW_PLANT_SCOPES=['drinking_water_treatment','desalination'];
+  const hasDWTreatment=dwSub.some(s=>DW_PLANT_SCOPES.includes(s));
+
   if(q.id==='water_streams'){
     const filtered=q.options.filter(o=>{
       switch(o.id){
         case'raw_water':              return hasDW||(hasIWW&&!onMunOnly);
         case'raw_wastewater':         return hasMWW||hasIWW;
         case'industrial_process_water':return hasIWW;
-        case'filter_backwash_water':  return hasDW||hasMWW;
-        case'membrane_concentrate_ro_reject':return hasDW||hasReuse||hasIWW;
-        case'recycled_process_water': return hasDW||hasMWW||hasIWW;
-        case'disinfection_byproduct_streams':return hasDW||hasMWW;
+        // BUG-14: treatment-plant streams hidden for distribution-only DW projects
+        case'filter_backwash_water':  return (hasDW&&hasDWTreatment)||hasMWW;
+        case'membrane_concentrate_ro_reject':return (hasDW&&hasDWTreatment)||hasReuse||hasIWW;
+        case'recycled_process_water': return (hasDW&&hasDWTreatment)||hasMWW||hasIWW;
+        case'disinfection_byproduct_streams':return (hasDW&&hasDWTreatment)||hasMWW;
         case'cooling_water':          return hasIWW;
         case'treated_drinking_water': return hasDW;
         case'treated_wastewater_effluent':return (hasMWW||hasIWW)&&(hasDirect||hasReuse||hasLand||hasReuseDis);
-        case'sludge_biosolids':       return hasMWW||hasDW||hasIWW||hasResid;
-        case'spent_filter_media_resin':return hasDW||hasMWW||hasIWW;
+        // BUG-14: sludge/spent media only for treatment plants, not distribution-only
+        case'sludge_biosolids':       return (hasDW&&hasDWTreatment)||hasMWW||hasIWW||hasResid;
+        case'spent_filter_media_resin':return (hasDW&&hasDWTreatment)||hasMWW||hasIWW;
         case'stormwater_site_runoff': return hasSW||hasIWW||hasMWW;
         case'leachate':               return hasResid||hasIWW||(hasMWW&&hasGW);
         default:return true;
@@ -688,8 +695,8 @@ function getFilteredOptions(q){
         case'direct_environmental_discharge':return hasDirect||hasLand;
         case'sewer_connection_discharge':    return hasIndirect;
         case'reuse':                       return hasReuse||hasReuseDis;
-        case'residuals_management':        return hasMWW||hasDW||hasIWW||hasResid;
-        case'advanced_treatment':          return hasDW||hasMWW||hasReuse||hasIWW;
+        case'residuals_management':        return hasMWW||(hasDW&&hasDWTreatment)||hasIWW||hasResid;
+        case'advanced_treatment':          return (hasDW&&hasDWTreatment)||hasMWW||hasReuse||hasIWW;
         default:return true;
       }
     });

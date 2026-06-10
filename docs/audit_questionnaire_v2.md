@@ -305,6 +305,7 @@ distribution network or other utility"
 | BUG-12-B | Q17 raw_wastewater label misleading for septic/onsite projects | MEDIUM | P3 |
 | BUG-12-C | STEP 3 subscopes in fixed schema order instead of selection order | MEDIUM | P3 |
 | BUG-13 | Q13 discharge_type hard block for distribution-only DW projects | HIGH | P1 |
+| BUG-14 | Q17/Q18 treatment-plant streams shown for distribution-only DW | MEDIUM | P2 |
 
 ### Correction roadmap
 
@@ -328,6 +329,42 @@ distribution network or other utility"
 - BUG-12-B: Contextual label for raw_wastewater in septic/decentralized projects
 - BUG-12-C: STEP 3 subscope order aligned to user selection order
 - BUG-13: discharge_type hard block for distribution-only DW projects — FIXED (P1)
+- BUG-14: Q17/Q18 treatment-plant streams/activities for distribution-only DW — FIXED (P2)
+
+---
+
+### BUG-14 — Q17 water_streams + Q18 project_activities: treatment-plant options shown for distribution-only DW projects
+**Severity: MEDIUM**
+**Affected profiles: drinking_water + distribution_network only (no treatment sub-scope)**
+**Discovered: Real estate developer use case (artesian well → distribution, no treatment)**
+
+**Problem:**
+`getFilteredOptions()` used `hasDW = true` as the sole condition for showing treatment-
+plant-specific water streams and activities. For a distribution-only project, this
+displayed 6 irrelevant options in Q17 and 2 irrelevant options in Q18:
+
+Q17 incorrectly shown: filter_backwash_water, membrane_concentrate_ro_reject,
+recycled_process_water, disinfection_byproduct_streams, sludge_biosolids,
+spent_filter_media_resin
+
+Q18 incorrectly shown: advanced_treatment, residuals_management
+
+For a project that pumps artesian water and distributes it without treatment, only
+raw_water and treated_drinking_water are relevant water streams.
+
+**Required fix:**
+Add `hasDWTreatment` flag:
+  `hasDWTreatment = dwSub.some(s => ['drinking_water_treatment','desalination'].includes(s))`
+
+Replace `hasDW` with `(hasDW && hasDWTreatment)` for the 6 treatment-plant streams
+and 2 treatment-plant activities listed above.
+
+**Files changed:**
+1. index.html — hasDWTreatment added to getFilteredOptions(), 8 cases updated
+2. IntakeForm.jsx — hasDWTreatment added to getFilteredOptions(), 8 cases updated
+3. canonical.yaml — version 0.2.3 → 0.2.4, changelog
+4. plan_questions.md — BUG-14 changelog entry
+5. audit_questionnaire_v2.md — this entry
 
 ---
 

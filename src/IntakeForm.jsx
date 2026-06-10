@@ -1,7 +1,7 @@
 /**
  * AquaForge regAssist — Intake Questionnaire Component
  * File: IntakeForm.jsx
- * Version: 2.1.3
+ * Version: 2.1.4
  *
  * Changelog v2.0 → v2.1:
  *   BUG-01 through BUG-11: see audit_questionnaire_v2.md
@@ -190,6 +190,14 @@ function getFilteredOptions(question, answers) {
     source.includes("municipal_supply") && !hasRawWaterSource;
 
   // ── BUG-01: Q17 water_streams filtering ────────────────────────────────────
+  // BUG-14: hasDWTreatment — true only when project includes a full DW treatment
+  // plant or desalination unit. Hides treatment-plant-specific streams for
+  // distribution-only projects (distribution network without on-site treatment).
+  const dwSubscopesFull = answers["drinking_water_subscopes"] || [];
+  const hasDWTreatment = dwSubscopesFull.some((s) =>
+    ["drinking_water_treatment", "desalination"].includes(s)
+  );
+
   if (qId === "water_streams") {
     const filtered = options.filter(({ id: optId }) => {
       switch (optId) {
@@ -202,17 +210,18 @@ function getFilteredOptions(question, answers) {
         case "industrial_process_water":
           return hasIWW;
 
+        // BUG-14: restricted to treatment-plant DW projects
         case "filter_backwash_water":
-          return hasDW || hasMWW;
+          return (hasDW && hasDWTreatment) || hasMWW;
 
         case "membrane_concentrate_ro_reject":
-          return hasDW || hasReuse || hasIWW;
+          return (hasDW && hasDWTreatment) || hasReuse || hasIWW;
 
         case "recycled_process_water":
-          return hasDW || hasMWW || hasIWW;
+          return (hasDW && hasDWTreatment) || hasMWW || hasIWW;
 
         case "disinfection_byproduct_streams":
-          return hasDW || hasMWW;
+          return (hasDW && hasDWTreatment) || hasMWW;
 
         case "cooling_water":
           return hasIWW;
@@ -224,11 +233,12 @@ function getFilteredOptions(question, answers) {
           return (hasMWW || hasIWW) &&
                  (hasDirect || hasReuse || hasLand || hasReuseDis);
 
+        // BUG-14: restricted to treatment-plant DW projects
         case "sludge_biosolids":
-          return hasMWW || hasDW || hasIWW || hasResid;
+          return (hasDW && hasDWTreatment) || hasMWW || hasIWW || hasResid;
 
         case "spent_filter_media_resin":
-          return hasDW || hasMWW || hasIWW;
+          return (hasDW && hasDWTreatment) || hasMWW || hasIWW;
 
         case "stormwater_site_runoff":
           return hasSW || hasIWW || hasMWW;
@@ -271,7 +281,8 @@ function getFilteredOptions(question, answers) {
           return true; // always shown
 
         case "advanced_treatment":
-          return hasDW || hasMWW || hasReuse || hasIWW;
+          // BUG-14: hidden for distribution-only DW projects
+          return (hasDW && hasDWTreatment) || hasMWW || hasReuse || hasIWW;
 
         case "storage":
           return true; // always shown
@@ -292,7 +303,8 @@ function getFilteredOptions(question, answers) {
           return hasReuse || hasReuseDis;
 
         case "residuals_management":
-          return hasMWW || hasDW || hasIWW || hasResid;
+          // BUG-14: hidden for distribution-only DW projects
+          return hasMWW || (hasDW && hasDWTreatment) || hasIWW || hasResid;
 
         case "monitoring_reporting":
           return true; // always shown

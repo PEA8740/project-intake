@@ -5,21 +5,15 @@
 # ============================================================================
 #
 # id:      water_project_intake_v2
-# version: 0.2.3
-# Changelog v2.0 → v2.1 (full audit pass — audit_questionnaire_v2.md):
-#   BUG-01 through BUG-11: see audit_questionnaire_v2.md
-# Changelog v2.1 → v2.1.2:
-#   BUG-12-A: canonical ID vs UI visible counter — distinction documented
-#   BUG-12-B: raw_wastewater — label_context added for decentralized_onsite
-#   BUG-12-C: STEP 3 subscope ordering rule documented (frontend enforcement)
+# version: 0.2.4
 # Changelog v2.1.2 → v2.1.3:
 #   BUG-13: discharge_type — hard block for distribution-only DW projects
-#           required: true → required: false (conditional on discharge-generating scope)
-#           new option: not_applicable_supply_only
-#           frontend: isDischargeGenerating() helper + validate() updated
+# Changelog v2.1.3 → v2.1.4:
+#   BUG-14: water_streams + project_activities — treatment-plant streams hidden
+#           for distribution-only DW projects (hasDWTreatment flag)
 
 id: water_project_intake_v2
-version: 0.2.3
+version: 0.2.4
 domain: water
 status: draft
 
