@@ -1,5 +1,5 @@
 # plan_questions.md — AquaForge regAssist Intake Questionnaire v2.1
-# Corrected version — Full audit pass (BUG-01 to BUG-10)
+# Corrected version — Full audit pass (BUG-01 to BUG-12)
 # Ref: audit_questionnaire_v2.md
 
 ## Changelog v2.0 → v2.1
@@ -13,6 +13,9 @@
 # BUG-08: Q19 groundwater_impact — mutual exclusion rule added for no_groundwater_impact
 # BUG-09: Q6 municipal_wastewater_subscopes — WWTP operator vs sewer connection clarified
 # BUG-10: Q12 water_source_type — "no_water_intake" relabeled for clarity
+# BUG-12-A: Canonical ID (Q5–Q11) vs UI visible counter — distinction documented
+# BUG-12-B: Q17 raw_wastewater — contextual label for decentralized_onsite (septic tank)
+# BUG-12-C: STEP 3 sub-scope ordering — now rendered in water_families selection order
 
 ---
 
@@ -59,6 +62,19 @@ STEP 5   Streams, activities & GW     (complete logical treatment chain)
 
 > Multi-scope navigation rule: For each scope checked in STEP 2, one dedicated
 > sub-scope question is generated in the exact order the user selected it.
+>
+> BUG-12-C fix: This ordering rule is now enforced in the frontend (visibleQ() /
+> visibleQuestions()). Sub-scope questions are sorted by the index of their parent
+> family in answers['water_families'], preserving user selection order. Implemented
+> via SUBSCOPE_FAMILY_MAP constant + stable Array.sort on the filtered question list.
+>
+> BUG-12-A note — Canonical IDs vs UI counter: Sub-scope questions have stable
+> canonical IDs (Q5 = drinking_water_subscopes … Q11 = residuals_subscopes). The
+> UI displays a dynamic visible-question counter (e.g. "Question 3 of 7") that
+> depends on which questions are currently visible — it does NOT correspond to
+> canonical IDs. Always reference questions by canonical ID in test scripts,
+> audit documents, and cross-file references. Never use the UI counter as a
+> stable identifier.
 
 ---
 
@@ -550,6 +566,13 @@ Options with filtering rules:
   - ontology_refs.subdomains: [raw_wastewater, sewage_influent]
   - SHOW IF: municipal_wastewater OR industrial_wastewater
   - HIDE IF: drinking_water only, OR indirect discharge only without WW scope
+  - LABEL CONTEXT [BUG-12-B]: context-aware label required at render time
+    - If decentralized_onsite selected AND centralized_wwtp_operator NOT selected:
+      → label_key: raw_wastewater_decentralized
+      → "Raw wastewater (septic tank influent / household sewage)"
+    - Otherwise (WWTP operator or industrial WW):
+      → label_key: raw_wastewater (default)
+      → "Raw wastewater (WWTP influent — incoming sewage to treatment plant)"
 
 - `industrial_process_water` — Industrial process water (incoming)
   - ontology_refs.subdomains: [process_water, industrial_influent]
@@ -757,7 +780,7 @@ variability, regulatory history, or any other relevant information."
 
 ---
 
-## Summary — 21 Questions across 6 Steps (v2.1)
+## Summary — 21 Questions across 6 Steps (v2.1.2)
 
 | #   | ID                                  | Type         | Step | Conditional                       | Changed in v2.1 |
 |-----|-------------------------------------|--------------|------|-----------------------------------|-----------------|
@@ -805,3 +828,13 @@ variability, regulatory history, or any other relevant information."
    sewer_connection_indirect_discharge; centralized_wwtp renamed to
    centralized_wwtp_operator (BUG-04, BUG-09).
 10. Q12 no_water_intake renamed to no_raw_water_abstraction (BUG-10).
+11. BUG-12-B: raw_wastewater in Q17 requires a contextual label override at render time.
+    Two label keys exist in the locale file: raw_wastewater (default) and
+    raw_wastewater_decentralized. Frontend applies the decentralized label when
+    municipal_wastewater_subscopes includes decentralized_onsite AND does NOT include
+    centralized_wwtp_operator. getLabelOverrides() in getFilteredOptions() handles this.
+12. BUG-12-C: STEP 3 sub-scope questions must be sorted by parent family selection order
+    (answers['water_families']). SUBSCOPE_FAMILY_MAP provides the mapping. visibleQ() /
+    visibleQuestions() applies a stable sort on the filtered question list.
+13. BUG-12-A: Canonical IDs (Q5–Q11) ≠ UI visible counter. Never reference questions
+    by UI counter. Use canonical IDs in all cross-file references.

@@ -1,16 +1,17 @@
 /**
  * AquaForge regAssist — Intake Questionnaire Component
  * File: IntakeForm.jsx
- * Version: 2.1.0
+ * Version: 2.1.2
  *
  * Changelog v2.0 → v2.1:
- *   BUG-01: getFilteredOptions() — Q17 water_streams filtered by scope + discharge
- *   BUG-02: getFilteredOptions() — Q18 project_activities filtered by source + discharge
- *   BUG-03: direct_environmental_discharge and sewer_connection_discharge rendered distinctly
- *   BUG-05: Q15 required_if now includes indirect discharge (handled in canonical — no code change)
- *   BUG-07: Q16 conditional (handled in canonical — no code change)
- *   BUG-08: Mutual exclusion enforced for Q19 no_groundwater_impact
- *   All other bugs (BUG-04, BUG-06, BUG-09, BUG-10): handled in canonical + locale files
+ *   BUG-01 through BUG-11: see audit_questionnaire_v2.md
+ *
+ * Changelog v2.1 → v2.1.2:
+ *   BUG-12-B: getLabelOverrides() added — contextual label for raw_wastewater
+ *             when decentralized_onsite selected without centralized_wwtp_operator
+ *   BUG-12-C: SUBSCOPE_FAMILY_MAP + sort in visibleQuestions() — sub-scope
+ *             questions now rendered in water_families selection order
+ *   BUG-12-A: No code change — documentation/convention fix only
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -53,6 +54,42 @@ function isQuestionVisible(question, answers) {
   }
 
   return true;
+}
+
+// ── BUG-12-C: Subscope → parent family mapping ────────────────────────────────
+/**
+ * Maps each sub-scope question ID to its parent family key in water_families.
+ * Used by visibleQuestions() to sort subscopes in user selection order.
+ */
+const SUBSCOPE_FAMILY_MAP = {
+  drinking_water_subscopes:        "drinking_water",
+  municipal_wastewater_subscopes:  "municipal_wastewater",
+  industrial_wastewater_subscopes: "industrial_wastewater",
+  stormwater_subscopes:            "stormwater",
+  groundwater_subscopes:           "groundwater",
+  water_reuse_subscopes:           "water_reuse",
+  residuals_subscopes:             "residuals_biosolids",
+};
+
+// ── BUG-12-B: Contextual label overrides ──────────────────────────────────────
+/**
+ * Returns an object mapping option IDs to override labels for a given question,
+ * based on current answers. Non-destructive: applied via .map() after .filter().
+ * Currently handles:
+ *   - water_streams / raw_wastewater: decentralized context (septic tank)
+ */
+function getLabelOverrides(qId, answers) {
+  if (qId !== "water_streams") return {};
+  const mwwSub = answers["municipal_wastewater_subscopes"] || [];
+  const isDecentralized =
+    mwwSub.includes("decentralized_onsite") &&
+    !mwwSub.includes("centralized_wwtp_operator");
+  if (isDecentralized) {
+    return {
+      raw_wastewater: "Raw wastewater (septic tank influent / household sewage)",
+    };
+  }
+  return {};
 }
 
 // ── BUG-01 + BUG-02: Dynamic option filtering ─────────────────────────────────
@@ -104,7 +141,7 @@ function getFilteredOptions(question, answers) {
 
   // ── BUG-01: Q17 water_streams filtering ────────────────────────────────────
   if (qId === "water_streams") {
-    return options.filter(({ id: optId }) => {
+    const filtered = options.filter(({ id: optId }) => {
       switch (optId) {
         case "raw_water":
           return hasDW || (hasIWW && !onMunicipalSupplyOnly);
@@ -153,6 +190,13 @@ function getFilteredOptions(question, answers) {
           return true;
       }
     });
+    // BUG-12-B: apply contextual label overrides
+    const overrides = getLabelOverrides(qId, answers);
+    return Object.keys(overrides).length === 0
+      ? filtered
+      : filtered.map((o) =>
+          overrides[o.id] ? { ...o, label: overrides[o.id] } : o
+        );
   }
 
   // ── BUG-02: Q18 project_activities filtering ───────────────────────────────
@@ -465,9 +509,20 @@ export default function IntakeForm({
   }, [lang]);
 
   // Compute visible questions based on current answers
+  // BUG-12-C: sort sub-scope questions by water_families selection order
   const visibleQuestions = useCallback(() => {
     if (!schema) return [];
-    return schema.questions.filter((q) => isQuestionVisible(q, answers));
+    const visible = schema.questions.filter((q) => isQuestionVisible(q, answers));
+    const families = answers["water_families"] || [];
+    if (!families.length) return visible;
+    // Stable sort: only reorders subscope questions relative to each other;
+    // all other questions preserve their original relative position.
+    return [...visible].sort((a, b) => {
+      const fa = SUBSCOPE_FAMILY_MAP[a.id];
+      const fb = SUBSCOPE_FAMILY_MAP[b.id];
+      if (fa && fb) return families.indexOf(fa) - families.indexOf(fb);
+      return 0;
+    });
   }, [schema, answers]);
 
   const visible         = visibleQuestions();
