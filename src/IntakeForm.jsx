@@ -1,7 +1,7 @@
 /**
  * AquaForge regAssist — Intake Questionnaire Component
  * File: IntakeForm.jsx
- * Version: 2.1.2
+ * Version: 2.1.3
  *
  * Changelog v2.0 → v2.1:
  *   BUG-01 through BUG-11: see audit_questionnaire_v2.md
@@ -12,6 +12,12 @@
  *   BUG-12-C: SUBSCOPE_FAMILY_MAP + sort in visibleQuestions() — sub-scope
  *             questions now rendered in water_families selection order
  *   BUG-12-A: No code change — documentation/convention fix only
+ *
+ * Changelog v2.1.2 → v2.1.3:
+ *   BUG-13: discharge_type — hard block removed for distribution-only DW projects
+ *           isDischargeGenerating() helper added
+ *           isQuestionRequired() added — replaces raw q.required checks
+ *           not_applicable_supply_only option added to discharge_type
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -54,6 +60,50 @@ function isQuestionVisible(question, answers) {
   }
 
   return true;
+}
+
+// ── BUG-13: Discharge-generating scope helper ─────────────────────────────────
+/**
+ * Returns true when the project has at least one scope that generates an effluent,
+ * meaning discharge_type IS required. Returns false for distribution-only projects
+ * (drinking_water_distribution without any treatment sub-scope and without any
+ * effluent-generating water family).
+ */
+const DW_TREATMENT_SCOPES = [
+  "drinking_water_treatment",
+  "source_water_intake",
+  "private_well_supply",
+  "desalination",
+];
+const EFFLUENT_FAMILIES = [
+  "municipal_wastewater",
+  "industrial_wastewater",
+  "stormwater",
+  "residuals_biosolids",
+  "water_reuse",
+  "groundwater",
+];
+
+function isDischargeGenerating(answers) {
+  const dwSub   = answers["drinking_water_subscopes"] || [];
+  const families = answers["water_families"] || [];
+  const hasTreatment = dwSub.some((s) => DW_TREATMENT_SCOPES.includes(s));
+  const hasEffluent  = families.some((f) => EFFLUENT_FAMILIES.includes(f));
+  return hasTreatment || hasEffluent;
+}
+
+/**
+ * Returns true when the question must have a value before the user can proceed.
+ * Extends the static q.required flag with BUG-13 conditional logic for discharge_type.
+ */
+function isQuestionRequired(question, answers) {
+  if (question.required === false && !question.required_unless_distribution_only) {
+    return false;
+  }
+  if (question.id === "discharge_type" && question.required_unless_distribution_only) {
+    return isDischargeGenerating(answers);
+  }
+  return question.required !== false;
 }
 
 // ── BUG-12-C: Subscope → parent family mapping ────────────────────────────────
@@ -280,7 +330,8 @@ function applyGroundwaterExclusion(questionId, optionId, currentValue) {
 
 // ── Validation ────────────────────────────────────────────────────────────────
 function validateQuestion(question, answers) {
-  if (question.required === false) return null;
+  // BUG-13: use isQuestionRequired() instead of raw q.required check
+  if (!isQuestionRequired(question, answers)) return null;
   if (question.type === "text_area") return null;
 
   const value = answers[question.id];
@@ -672,7 +723,7 @@ export default function IntakeForm({
         <div className="question-panel">
           <h3 className="question-label">
             {currentQuestion.label}
-            {currentQuestion.required !== false &&
+            {isQuestionRequired(currentQuestion, answers) &&
              currentQuestion.type !== "text_area" && (
               <span className="required-mark" aria-label="required"> *</span>
             )}

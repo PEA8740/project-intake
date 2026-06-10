@@ -14,6 +14,7 @@
 #   BUG-12-B: raw_wastewater — two label variants added:
 #             raw_wastewater (default, WWTP influent context)
 #             raw_wastewater_decentralized (septic tank / onsite context)
+#   BUG-13: not_applicable_supply_only label added to discharge_type
 
 locale: en
 questionnaire_id: water_project_intake_v2
@@ -294,6 +295,8 @@ questions:
       reuse_on_site: "On-site reuse — no external discharge"
       hauled_offsite_treatment: "Collected and hauled to approved off-site treatment facility"
       no_discharge_closed_loop: "No discharge — fully closed-loop / zero liquid discharge"
+      # BUG-13: distribution-only / supply-only DW projects
+      not_applicable_supply_only: "Not applicable — distribution / supply only (no effluent, no discharge point)"
       unknown_to_determine: "Unknown / to be determined"
 
   receiving_environment_type:

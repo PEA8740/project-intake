@@ -1,5 +1,5 @@
 # plan_questions.md — AquaForge regAssist Intake Questionnaire v2.1
-# Corrected version — Full audit pass (BUG-01 to BUG-12)
+# Corrected version — Full audit pass (BUG-01 to BUG-13)
 # Ref: audit_questionnaire_v2.md
 
 ## Changelog v2.0 → v2.1
@@ -16,6 +16,8 @@
 # BUG-12-A: Canonical ID (Q5–Q11) vs UI visible counter — distinction documented
 # BUG-12-B: Q17 raw_wastewater — contextual label for decentralized_onsite (septic tank)
 # BUG-12-C: STEP 3 sub-scope ordering — now rendered in water_families selection order
+# BUG-13: Q13 discharge_type — hard block removed for distribution-only DW projects
+#          required: true → required: false (conditional); new option not_applicable_supply_only
 
 ---
 
@@ -444,10 +446,11 @@ Options:
 ```
 id: discharge_type
 type: multi_select
-required: true
+required: false                          ← BUG-13: was required: true
+required_unless_distribution_only: true  ← BUG-13: custom flag — see below
 writes_to: classification.discharge_type
 ```
-Options (unchanged from v2.0 — split of "discharge" activity handled in Q18):
+Options (v2.1.3 — BUG-13 adds not_applicable_supply_only):
 - `direct_surface_water`
 - `direct_groundwater`
 - `indirect_sanitary_sewer`
@@ -456,7 +459,24 @@ Options (unchanged from v2.0 — split of "discharge" activity handled in Q18):
 - `reuse_on_site`
 - `hauled_offsite_treatment`
 - `no_discharge_closed_loop`
+- `not_applicable_supply_only` ← **NEW (BUG-13)**
 - `unknown_to_determine`
+
+> **BUG-13 fix — Conditional required logic:**
+> Q13 is NOT required (and not validated as mandatory) when the project is
+> "distribution-only": `drinking_water_distribution` selected in drinking_water_subscopes
+> AND none of [drinking_water_treatment, source_water_intake, private_well_supply,
+> desalination] selected AND no effluent-generating water families selected
+> (municipal_wastewater, industrial_wastewater, stormwater, residuals_biosolids,
+> water_reuse, groundwater).
+>
+> Frontend implementation: `isDischargeGenerating()` helper function in index.html
+> and IntakeForm.jsx. `validate()` skips mandatory check when
+> `isDischargeGenerating()` returns false.
+>
+> For distribution-only profiles, the question remains VISIBLE with a contextual
+> note and `not_applicable_supply_only` pre-highlighted. User may still select any
+> option if applicable (e.g., overflow discharge from storage tanks).
 
 ---
 

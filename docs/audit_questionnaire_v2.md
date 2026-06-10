@@ -304,6 +304,7 @@ distribution network or other utility"
 | BUG-12-A | Canonical ID vs UI counter — test methodology confusion | DOCUMENTATION | — |
 | BUG-12-B | Q17 raw_wastewater label misleading for septic/onsite projects | MEDIUM | P3 |
 | BUG-12-C | STEP 3 subscopes in fixed schema order instead of selection order | MEDIUM | P3 |
+| BUG-13 | Q13 discharge_type hard block for distribution-only DW projects | HIGH | P1 |
 
 ### Correction roadmap
 
@@ -326,6 +327,51 @@ distribution network or other utility"
 - BUG-12-A: Documentation convention (no code change)
 - BUG-12-B: Contextual label for raw_wastewater in septic/decentralized projects
 - BUG-12-C: STEP 3 subscope order aligned to user selection order
+- BUG-13: discharge_type hard block for distribution-only DW projects — FIXED (P1)
+
+---
+
+### BUG-13 — Q13 discharge_type: hard block for distribution-only drinking water projects
+**Severity: HIGH**
+**Affected profiles: Any drinking_water project with distribution_network as sole sub-scope**
+**Discovered: Real estate developer use case (artesian well → distribution network, < 10 m³/day)**
+
+**Problem:**
+Q13 (discharge_type) was set `required: true` unconditionally. For a project that is
+purely a distribution network (pipes, storage tanks, pumping stations) fed by an
+artesian well or municipal supply — with no treatment plant, no effluent, no discharge
+point — every available answer is semantically incorrect:
+- `direct_surface_water` / `direct_groundwater` / `indirect_sewer` → inapplicable
+- `no_discharge_closed_loop` → misleading (ZLD implies industrial context)
+- `unknown_to_determine` → forces user to misrepresent their project
+
+The user encountered a hard block at step 7/11 with no valid option to select.
+
+**Root cause:**
+`discharge_type` was designed as the "key regulatory variable" and set unconditionally
+required. The design did not account for the case where a DW project involves ONLY
+distribution infrastructure with no water treatment and no effluent generation.
+
+**Required fix:**
+1. Change `required: true` → `required: false` on discharge_type in canonical.yaml
+2. Add `required_unless_distribution_only: true` custom flag
+3. Add new option `not_applicable_supply_only`
+4. Add `isDischargeGenerating()` helper in frontend:
+   - Returns true (required) if drinking_water_treatment / source_water_intake /
+     private_well_supply / desalination in drinking_water_subscopes
+   - OR any of municipal_wastewater / industrial_wastewater / stormwater /
+     residuals_biosolids / water_reuse / groundwater in water_families
+   - Returns false (optional) for pure distribution-only profiles
+5. Modify `validate()` to skip mandatory check when `isDischargeGenerating()` = false
+6. Show contextual note for distribution-only profiles highlighting the new option
+
+**Files changed:**
+1. canonical.yaml — required: false + required_unless_distribution_only + new option
+2. plan_questions.md — Q13 section updated with BUG-13 rule
+3. en.yaml — not_applicable_supply_only label added
+4. audit_questionnaire_v2.md — this entry
+5. index.html — isDischargeGenerating() + validate() updated + option added
+6. IntakeForm.jsx — isDischargeGenerating() + validate() updated + option added
 
 ---
 
