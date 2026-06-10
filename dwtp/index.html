@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AquaForge regAssist — DWTP Intake v3</title>
+  <style>
+    :root{--primary:#0a3d62;--accent:#2980b9;--accent-h:#1a6fa8;--success:#1e8449;--warn:#d35400;--bg:#f4f7fb;--card:#fff;--border:#d5e0ee;--text:#1a2332;--muted:#5d7087;--tag:#e8f0fa;--canon:#e8f5e9;--canon-t:#1b5e20;--r:10px;--sh:0 2px 12px rgba(10,61,98,.08)}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    header{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;padding:20px 24px 16px}
+    .hi{max-width:900px;margin:0 auto}
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+    .icon{width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:20px}
+    .bname{font-size:12px;opacity:.85;letter-spacing:.5px;text-transform:uppercase}
+    h1{font-size:21px;font-weight:700;line-height:1.3}
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);padding:3px 10px;border-radius:20px;font-size:11px}
+    .pwrap{background:var(--primary);border-bottom:1px solid rgba(255,255,255,.1);padding:0 24px}
+    .pinner{max-width:900px;margin:0 auto;padding:10px 0}
+    .slabs{display:flex}
+    .slab{flex:1;text-align:center;font-size:10px;color:rgba(255,255,255,.45);padding:6px 3px;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .slab.active{color:#fff;border-bottom-color:#5dade2;font-weight:600}
+    .slab.done{color:rgba(255,255,255,.7);border-bottom-color:#1a8c5a}
+    main{max-width:900px;margin:0 auto;padding:24px 16px 90px}
+    .card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--border);margin-bottom:20px;overflow:hidden}
+    .ch{background:linear-gradient(to right,#f0f5fb,#e8f0fa);border-bottom:1px solid var(--border);padding:16px 24px}
+    .cnum{font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+    .ctitle{font-size:18px;font-weight:700;color:var(--primary);margin:2px 0 4px}
+    .cdesc{font-size:13px;color:var(--muted)}
+    .cbody{padding:20px 24px}
+    .qb{margin-bottom:22px;padding-bottom:22px;border-bottom:1px solid #eef2f8}
+    .qb:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+    .qb.hidden{display:none}
+    .qb.sub{margin-left:22px;padding-left:14px;border-left:3px solid #c5d8ee}
+    .ql{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;line-height:1.4}
+    .qr{color:var(--warn);margin-left:4px}
+    .qh{font-size:12px;color:var(--muted);background:#f8fafd;border-left:3px solid var(--accent);padding:6px 10px;border-radius:0 4px 4px 0;margin-bottom:10px;line-height:1.5}
+    .qsub{font-size:11px;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .opts{display:flex;flex-direction:column;gap:5px}
+    .opt{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:#fff}
+    .opt:hover{border-color:var(--accent);background:#f0f6fc}
+    .opt.sel{border-color:var(--accent);background:#e8f3fc}
+    .opt input{margin-top:2px;flex-shrink:0;cursor:pointer}
+    .ol{font-size:13px;line-height:1.4}
+    .opt.locked{opacity:.7;cursor:default}
+    .pre-note{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:7px;padding:8px 12px;font-size:12px;color:#1b5e20;margin-bottom:8px}
+    .loc-ph{background:#f0f5fb;border:2px dashed var(--border);border-radius:8px;padding:32px;text-align:center;color:var(--muted)}
+    .loc-ph .li{font-size:32px;margin-bottom:8px}
+    .loc-ph p{font-size:13px;margin-bottom:14px}
+    .btn-loc{background:var(--accent);color:#fff;border:none;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer}
+    .loc-ok{background:#eafaf1;border:1px solid #a9dfbf;border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:10px}
+    .lck{color:var(--success);font-size:20px}
+    .li2{font-size:13px}
+    .lco{font-size:11px;color:var(--muted);font-family:monospace}
+    .btn-re{margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:5px;font-size:12px;cursor:pointer}
+    .qta{width:100%;min-height:90px;padding:10px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;resize:vertical;color:var(--text)}
+    .qta:focus{outline:none;border-color:var(--accent)}
+    .qta::placeholder{color:#aab8c8}
+    .scope-note{background:#fff8e1;border:1px solid #f9ca54;border-radius:8px;padding:12px 16px;font-size:12px;color:#7d6608;margin-bottom:20px;display:flex;gap:8px}
+    .sni{font-size:16px;flex-shrink:0}
+    .verr{background:#fdf2f2;border:1px solid #f5b7b1;border-radius:7px;padding:10px 14px;font-size:13px;color:#922b21;margin-bottom:16px;display:none}
+    .verr.vis{display:block}
+    .qb.err .ql{color:#c0392b}
+    .nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:12px 24px;box-shadow:0 -2px 12px rgba(0,0,0,.06);z-index:100}
+    .navi{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+    .ninfo{font-size:12px;color:var(--muted)}
+    .ninfo strong{color:var(--text)}
+    .nbtns{display:flex;gap:10px}
+    .btn{padding:10px 22px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;border:none}
+    .btn-back{background:#fff;color:var(--text);border:1px solid var(--border)}
+    .btn-next{background:var(--accent);color:#fff}
+    .btn-sub{background:var(--success);color:#fff}
+    #rp{display:none;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--border);overflow:hidden}
+    .rh{background:linear-gradient(135deg,var(--success),#27ae60);color:#fff;padding:20px 24px}
+    .rh h2{font-size:20px;margin-bottom:4px}
+    .rh p{font-size:13px;opacity:.9}
+    .rb{padding:24px}
+    .rs{margin-bottom:20px}
+    .rs h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+    .rrow{display:flex;gap:12px;font-size:13px;padding:5px 0;border-bottom:1px solid #f0f4f8}
+    .rrow:last-child{border-bottom:none}
+    .rk{color:var(--muted);min-width:230px;flex-shrink:0}
+    .rv{color:var(--text);font-weight:500;flex:1}
+    .t{display:inline-block;background:var(--tag);color:var(--accent);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;margin:1px 2px}
+    .tc{display:inline-block;background:var(--canon);color:var(--canon-t);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;margin:1px 2px}
+    .tw{display:inline-block;background:#fff3e0;color:#e65100;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;margin:1px 2px}
+    .po{background:#f8fafd;border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:8px}
+    .po h4{font-size:11px;font-weight:700;color:var(--canon-t);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+    .chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .cs{background:#e8f0fa;border:1px solid #c5d8ee;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:600;color:var(--primary)}
+    .ca{color:var(--muted);font-size:14px}
+    .btn-re2{background:var(--accent);color:#fff;border:none;padding:10px 22px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin-top:16px}
+  </style>
+</head>
+<body>
+<header>
+  <div class="hi">
+    <div class="brand"><div class="icon">💧</div><div><div class="bname">AquaForge regAssist</div></div></div>
+    <h1>Drinking Water Treatment Plant — Regulatory Intake</h1>
+    <div class="badges">
+      <span class="badge">v3.0 · ontology_canonical v0.2.0 · intake_canonical v0.2.2</span>
+      <span class="badge">DWTP only · Process wastewater excluded</span>
+    </div>
+  </div>
+</header>
+<div class="pwrap"><div class="pinner"><div class="slabs" id="slabs"></div></div></div>
+<main>
+  <div class="verr" id="verr"></div>
+  <div class="scope-note" id="snote">
+    <span class="sni">⚠️</span>
+    <div><strong>Scope note:</strong> Drinking water production only. Process wastewater (backwash → <code>backwash_wastewater</code>, sludge → <code>sludge</code>, brine → <code>brine_concentrate</code>) handled separately by regAssist.</div>
+  </div>
+  <div id="fc"></div>
+  <div id="rp"></div>
+</main>
+<div class="nav" id="nav">
+  <div class="navi">
+    <div class="ninfo">Step <strong id="sc">1</strong> of <strong id="st">6</strong></div>
+    <div class="nbtns">
+      <button class="btn btn-back" id="bb" onclick="go(-1)">← Back</button>
+      <button class="btn btn-next" id="bn" onclick="go(1)">Next →</button>
+    </div>
+  </div>
+</div>
+<script>
+// ── STEPS DATA ─────────────────────────────────────────────
+const STEPS=[
+ {key:'loc',label:'Location',title:'Project Location',desc:'Locate your project. Coordinates feed regAssist jurisdiction discovery.',questions:[]},
+ {key:'proj',label:'Project',title:'Project Characterization',desc:'Organization, project scope (use_case), and scale.',questions:[
+  {id:'promoter_type',type:'radio',required:true,wt:'project.promoter_type',
+   label:'What type of organization is leading this project?',
+   help:'The promoter type determines which regulatory regimes apply.',
+   options:[{id:'municipal',l:'Municipal authority / public water utility'},{id:'industrial',l:'Industrial company (sector to be specified)'},{id:'private_utility',l:'Private operator / concession holder'},{id:'institutional',l:'Institutional facility (hospital, university, campus, military)'},{id:'federal_government',l:'Federal or national government agency'},{id:'real_estate_developer',l:'Real estate developer'},{id:'other',l:'Other (describe in the final free-text question)'}]},
+  {id:'industrial_sector',type:'multi_select',required:true,sub:true,wt:'project.industrial_sector',
+   label:'What is the primary industrial sector?',
+   help:'Discovery and classification accelerator only — not an applicability axis.',
+   condition:{q:'promoter_type',op:'equals',val:'industrial'},
+   options:[{id:'food_beverage',l:'Food and beverage processing'},{id:'chemical_pharma',l:'Chemical and pharmaceutical manufacturing'},{id:'semiconductor_electronics',l:'Semiconductor and electronics manufacturing'},{id:'mining_metals',l:'Mining, quarrying and metal processing'},{id:'petroleum_refining',l:'Petroleum refining and petrochemicals'},{id:'power_generation',l:'Power generation (thermal, nuclear, hydro)'},{id:'other_industrial',l:'Other industrial sector'}]},
+  {id:'project_phase',type:'radio',required:true,wt:'project.phase',
+   label:'What phase is the project in?',
+   help:'Select the best match. The project phase determines which permits must be obtained.',
+   options:[{id:'feasibility_predesign',l:'Feasibility study / pre-design'},{id:'detailed_design',l:'Detailed engineering design'},{id:'new_construction',l:'New project — construction'},{id:'expansion',l:'Expansion / capacity increase'},{id:'retrofit_upgrade',l:'Rehabilitation / technology upgrade'},{id:'operation',l:'Operation of an existing system'},{id:'unknown',l:'Unknown / to be determined'}]},
+  {id:'project_capacity',type:'radio',required:true,wt:'project.capacity_range',
+   label:'What is the nominal treatment or production capacity?',
+   help:'Capacity thresholds determine EIA obligations, operator certification class, and monitoring frequency.',
+   options:[{id:'micro',l:'< 10 m³/day (approx. < 100 PE) — decentralized, single buildings'},{id:'small',l:'10–500 m³/day (approx. 100–5,000 PE) — small communities, rural systems'},{id:'medium',l:'500–10,000 m³/day (approx. 5,000–100,000 PE) — mid-size communities'},{id:'large',l:'10,000–100,000 m³/day (approx. 100,000–1,000,000 PE) — large cities'},{id:'very_large',l:'> 100,000 m³/day (> 1,000,000 PE) — major metropolitan areas'},{id:'unknown',l:'Not yet determined / to be assessed'}]},
+  {id:'project_nature',type:'radio',required:true,wt:'project.nature',
+   label:'What best describes the nature of this project?',
+   options:[{id:'new_greenfield',l:'New greenfield plant (no existing infrastructure)'},{id:'new_brownfield',l:'New plant on existing site (brownfield)'},{id:'upgrade_existing',l:'Upgrade / retrofit of existing treatment process'},{id:'capacity_expansion',l:'Capacity expansion (adding parallel treatment trains)'},{id:'emergency_interim',l:'Emergency or interim treatment system'}]},
+  {id:'water_families',type:'multi_select',required:true,wt:'classification.water_families',
+   label:'Which water scopes are part of this project?',
+   help:'Drinking water is pre-selected and locked for this questionnaire.',
+   preselected:['drinking_water'],locked:['drinking_water'],
+   options:[{id:'drinking_water',l:'Drinking water (production, treatment, distribution) ✓ always selected'},{id:'other_unsure',l:'Other / not sure — describe in the final question'}]},
+  {id:'drinking_water_subscopes',type:'multi_select',required:true,wt:'classification.drinking_water_subscopes',
+   label:'Which drinking water scopes apply to this project?',
+   help:'Drinking water treatment is always selected. Add additional scopes if applicable.',
+   preselected:['drinking_water_treatment'],locked:['drinking_water_treatment'],
+   options:[{id:'drinking_water_treatment',l:'Drinking water treatment plant (DWTP) ✓ always selected'},{id:'drinking_water_distribution',l:'Distribution network (pipes, storage tanks, pumping stations)'},{id:'source_water_intake',l:'Raw water intake / abstraction point (new or modified intake)'},{id:'desalination',l:'Desalination (seawater or brackish water treatment)'}]}
+ ]},
+ {key:'src',label:'Source',title:'Raw Water Source',desc:'Source type, protection status, abstraction permit, and sensitive zones.',questions:[
+  {id:'water_source_type',type:'multi_select',required:true,wt:'project.water_source',
+   label:'What is the nature of the raw water source?',
+   help:'Select all sources that will be abstracted or used by the project.',
+   options:[{id:'river_stream',l:'River / stream (flowing surface water)'},{id:'lake_reservoir',l:'Lake / reservoir (standing surface water)'},{id:'large_lake_system',l:'Large lake system (Great Lakes, Lake Geneva…)'},{id:'ocean_coastal',l:'Ocean / coastal / estuarine water (desalination or marine)'},{id:'confined_aquifer',l:'Confined aquifer (artesian groundwater)'},{id:'unconfined_aquifer',l:'Unconfined aquifer / water table'},{id:'rainwater_harvesting',l:'Rainwater harvesting / rooftop collection'},{id:'municipal_supply',l:'Pre-treated municipal water supply (no raw water abstraction on-site)'}]},
+  {id:'source_protection_zone',type:'radio',required:true,wt:'project.source_protection_zone',
+   label:'Is the raw water intake within a formally designated source protection zone?',
+   options:[{id:'yes_tier1',l:'Yes — Tier 1 / highest protection (restricted watershed)'},{id:'yes_tier2',l:'Yes — Tier 2 / moderate protection'},{id:'yes_tier3',l:'Yes — Tier 3 / basic protection'},{id:'no_designated',l:'No designated source protection zone'},{id:'unknown',l:'Unknown / under assessment'}]},
+  {id:'downstream_drinking_water_intake',type:'radio',required:true,wt:'project.receiving_environment.downstream_intake',
+   label:'Is there a drinking water intake downstream of or affected by this project\'s water abstraction point?',
+   help:'A downstream drinking water intake may trigger source water protection obligations in most jurisdictions.',
+   condition:{q:'water_source_type',op:'any_selected',vals:['river_stream','lake_reservoir','large_lake_system','ocean_coastal','confined_aquifer','unconfined_aquifer']},
+   options:[{id:'yes_confirmed',l:'Yes — confirmed downstream drinking water intake'},{id:'yes_suspected',l:'Probable but not confirmed'},{id:'false',l:'No downstream drinking water intake identified'},{id:'unknown',l:'Unknown'}]},
+  {id:'sensitive_zones',type:'multi_select',required:false,wt:'project.sensitive_zones',
+   label:'Are any protected or environmentally sensitive zones affected by this project\'s water abstraction?',
+   help:'Applies to the raw water intake and abstraction location. Automatic detection from GPS is performed in the background.',
+   options:[{id:'drinking_water_source_protection_area',l:'Drinking water source protection zone / wellhead protection area'},{id:'protected_biodiversity_habitat',l:'Legally protected biodiversity / natural habitat zone'},{id:'fish_aquatic_habitat',l:'Critical fish or aquatic species habitat'},{id:'wetland_protected',l:'Protected wetland / marsh / bog'},{id:'drinking_water_watershed',l:'Drinking water supply watershed / catchment area'},{id:'floodplain_flood_risk_zone',l:'Floodplain / designated flood risk zone'},{id:'transboundary_shared_water_body',l:'Transboundary or internationally shared water body'},{id:'indigenous_traditional_territory',l:'Indigenous / First Nations traditional territory (duty to consult)'},{id:'none_identified',l:'No sensitive or protected zones identified'},{id:'unknown',l:'Unknown / requires verification'}]},
+  {id:'abstraction_permit_status',type:'radio',required:true,wt:'project.abstraction_permit_status',
+   label:'What is the water abstraction / taking permit status?',
+   help:'Water taking permits are issued at different regulatory levels depending on jurisdiction.',
+   options:[{id:'existing_permit_valid',l:'Existing permit — valid and sufficient for planned capacity'},{id:'existing_permit_amendment',l:'Existing permit — amendment required (capacity change or new intake)'},{id:'new_permit_required',l:'New permit required'},{id:'permit_not_required',l:'No permit required (jurisdiction-specific exemption)'},{id:'unknown_permit',l:'Unknown / under assessment'}]},
+  {id:'source_regime',type:'radio',required:true,sub:true,wt:'project.source_regime',
+   label:'What is the hydrological regime of the source?',
+   condition:{q:'water_source_type',op:'any_selected',vals:['river_stream','lake_reservoir','large_lake_system']},
+   options:[{id:'perennial',l:'Perennial (flows year-round)'},{id:'seasonal_intermittent',l:'Seasonal or intermittent (dry periods expected)'},{id:'regulated_controlled',l:'Regulated / controlled (dam-managed flow)'},{id:'tidal_influenced',l:'Tidally influenced (saltwater intrusion risk)'}]}
+ ]},
+ {key:'qual',label:'Quality',title:'Raw Water Quality',desc:'Raw water quality characterization — drives treatment selection and regulatory targeting.',questions:[
+  {id:'turbidity_range',type:'radio',required:true,wt:'project.raw_water.turbidity_range',
+   label:'What is the typical raw water turbidity range?',
+   help:'NTU = Nephelometric Turbidity Units. Key driver of coagulation and filtration design.',
+   options:[{id:'very_low',l:'Very low — < 1 NTU (groundwater or highly protected source)'},{id:'low',l:'Low — 1–10 NTU (clear lake or protected surface water)'},{id:'moderate',l:'Moderate — 10–100 NTU (typical river or lake)'},{id:'high',l:'High — 100–1,000 NTU (turbid river, post-storm)'},{id:'very_high',l:'Very high — > 1,000 NTU (glacial melt or highly turbid source)'},{id:'highly_variable',l:'Highly variable (major seasonal extremes)'},{id:'unknown_turbidity',l:'Unknown'}]},
+  {id:'microbial_risk',type:'radio',required:true,wt:'project.raw_water.microbial_risk',
+   label:'What is the known or expected microbial risk level of the source water?',
+   help:'Informs required log-reduction credits (QMRA / GCDWQ / SDWA multi-barrier approach).',
+   options:[{id:'low',l:'Low — protected groundwater or confined aquifer'},{id:'moderate',l:'Moderate — typical surface water (Giardia / Cryptosporidium risk)'},{id:'high',l:'High — impacted source (upstream WWTP, CSO, agricultural runoff)'},{id:'very_high',l:'Very high — highly impacted (known contamination events)'},{id:'unknown_microbial',l:'Unknown / not assessed'}]},
+  {id:'chemical_concerns',type:'multi_select',required:false,wt:'project.raw_water.chemical_concerns',
+   label:'What chemical quality concerns are present or suspected in the raw water?',
+   help:'Select all that apply. Drives advanced treatment selection and regAssist source targeting.',
+   options:[{id:'high_nom',l:'High natural organic matter (NOM — DBP precursors)'},{id:'hardness_scaling',l:'Hardness / scaling potential (Ca, Mg)'},{id:'iron_manganese',l:'Iron and/or manganese (Fe/Mn)'},{id:'arsenic',l:'Arsenic (As)'},{id:'nitrates',l:'Nitrates (NO₃⁻)'},{id:'fluoride',l:'Fluoride — excess'},{id:'pfas',l:'PFAS — per- and polyfluoroalkyl substances'},{id:'taste_odour',l:'Taste and odour (geosmin, MIB)'},{id:'heavy_metals',l:'Heavy metals (Pb, Cd, Cr…)'},{id:'pesticides_herbicides',l:'Pesticides / herbicides'},{id:'pharmaceuticals',l:'Pharmaceuticals / CECs'},{id:'salinity_tds',l:'Salinity / high TDS (> 500 mg/L)'},{id:'none_known_chem',l:'No significant chemical concerns known'}]},
+  {id:'source_variability',type:'radio',required:true,wt:'project.raw_water.variability',
+   label:'How would you characterize raw water quality variability over time?',
+   options:[{id:'stable',l:'Stable (groundwater or highly regulated source)'},{id:'seasonal',l:'Seasonal variation (spring snowmelt, fall turnover)'},{id:'event_driven',l:'Event-driven (storm events cause major shifts)'},{id:'highly_variable',l:'Highly variable / unpredictable'}]}
+ ]},
+ {key:'treat',label:'Treatment',title:'Treatment Train',desc:'Treatment technologies — sub-questions appear based on selections.',questions:[
+  {id:'pre_treatment',type:'multi_select',required:false,wt:'classification.treatment_train.pre_treatment',
+   label:'Does the project include pre-treatment before the main process?',
+   options:[{id:'screening_grit',l:'Screening and grit removal'},{id:'pre_sedimentation',l:'Pre-sedimentation / settling basin'},{id:'pre_chlorination',l:'Pre-chlorination (algae control, Fe/Mn oxidation)'},{id:'pre_ozonation',l:'Pre-ozonation (colour, taste/odour, micropollutants)'},{id:'aeration',l:'Aeration (Fe/Mn, CO₂, H₂S — groundwater)'},{id:'bank_filtration',l:'River bank filtration / MAR'},{id:'none_pretreatment',l:'No pre-treatment'}]},
+  {id:'coagulation_flocculation',type:'radio',required:true,wt:'classification.treatment_train.coagulation_flocculation',
+   label:'Does the project include coagulation / flocculation / sedimentation?',
+   options:[{id:'yes_conventional',l:'Yes — conventional (rapid mix + flocculation + sedimentation)'},{id:'yes_dissolved_air',l:'Yes — dissolved air flotation (DAF)'},{id:'yes_ballasted',l:'Yes — ballasted flocculation (Actiflo®, CoMag®)'},{id:'no_coagulation',l:'No coagulation / flocculation'}]},
+  {id:'coagulant_type',type:'radio',required:true,sub:true,wt:'classification.treatment_train.coagulant_type',
+   label:'What is the primary coagulant type?',
+   condition:{q:'coagulation_flocculation',op:'any_selected',vals:['yes_conventional','yes_dissolved_air','yes_ballasted']},
+   options:[{id:'alum',l:'Aluminum sulfate — alum (Al₂(SO₄)₃)'},{id:'pac',l:'Polyaluminum chloride (PACl)'},{id:'ferric_chloride',l:'Ferric chloride (FeCl₃)'},{id:'ferric_sulfate',l:'Ferric sulfate (Fe₂(SO₄)₃)'},{id:'combined_coagulants',l:'Combination of coagulants'},{id:'other_coagulant',l:'Other / not yet selected'}]},
+  {id:'sedimentation_type',type:'radio',required:false,sub:true,wt:'classification.treatment_train.sedimentation_type',
+   label:'What type of sedimentation basin is used?',
+   condition:{q:'coagulation_flocculation',op:'any_selected',vals:['yes_conventional','yes_ballasted']},
+   options:[{id:'conventional_basin',l:'Conventional horizontal-flow settling basin'},{id:'lamella_settler',l:'Lamella / inclined plate settler'},{id:'sludge_blanket',l:'Sludge blanket clarifier (ACCELATOR®, Pulsator®)'},{id:'other_sedimentation',l:'Other'}]},
+  {id:'filtration',type:'multi_select',required:true,wt:'classification.treatment_train.filtration',
+   label:'What filtration technology is used in this project?',
+   help:'"No filtration" is mutually exclusive — selecting it clears all other options, and vice versa.',
+   options:[{id:'rapid_sand_filter',l:'Rapid sand filtration (RSF)'},{id:'dual_media_filter',l:'Dual-media filtration (anthracite + sand)'},{id:'slow_sand_filter',l:'Slow sand filtration (SSF — biological layer)'},{id:'gac_filter',l:'Granular activated carbon (GAC) filtration'},{id:'pressure_filter',l:'Pressure filtration'},{id:'ultrafiltration',l:'Ultrafiltration (UF membranes — 0.01–0.1 µm)'},{id:'microfiltration',l:'Microfiltration (MF membranes — 0.1–10 µm)'},{id:'no_filtration',l:'No filtration — disinfection only (groundwater not under direct influence) ⚠️ clears all other selections'}]},
+  {id:'membrane_module_config',type:'radio',required:true,sub:true,wt:'classification.treatment_train.membrane_module_config',
+   label:'What is the membrane module configuration?',
+   condition:{q:'filtration',op:'any_selected',vals:['ultrafiltration','microfiltration']},
+   options:[{id:'hollow_fiber',l:'Hollow fiber (submerged or pressurized)'},{id:'spiral_wound',l:'Spiral wound'},{id:'ceramic',l:'Ceramic membrane'},{id:'other_membrane_config',l:'Other'}]},
+  {id:'membrane_integrity_testing',type:'radio',required:true,sub:true,wt:'classification.treatment_train.membrane_integrity_testing',
+   label:'Is membrane integrity testing (MIT) planned or implemented?',
+   help:'MIT is required under most North American regulations for Cryptosporidium log-reduction credit.',
+   condition:{q:'filtration',op:'any_selected',vals:['ultrafiltration','microfiltration']},
+   options:[{id:'yes_pressure_decay',l:'Yes — pressure decay test (PDT) — direct integrity test'},{id:'yes_turbidity_lrc',l:'Yes — continuous turbidity / particle counting (indirect)'},{id:'yes_both',l:'Yes — both direct and indirect'},{id:'not_yet_determined',l:'Not yet determined'},{id:'no_mit',l:'No — not planned'}]},
+  {id:'advanced_treatment',type:'multi_select',required:false,wt:'classification.treatment_train.advanced_treatment',
+   label:'Does the project include advanced treatment beyond conventional filtration?',
+   options:[{id:'nanofiltration',l:'Nanofiltration (NF — 1–10 nm)'},{id:'reverse_osmosis',l:'Reverse osmosis (RO — < 1 nm)'},{id:'activated_carbon_powder',l:'Powdered activated carbon (PAC — batch dosing)'},{id:'advanced_oxidation',l:'Advanced oxidation (AOP — O₃/H₂O₂, UV/H₂O₂)'},{id:'ion_exchange',l:'Ion exchange (IX — nitrates, arsenic, hardness, PFAS)'},{id:'biological_filtration',l:'Biological activated carbon (BAC) / biofiltration'},{id:'none_advanced',l:'No advanced treatment'}]},
+  {id:'nf_ro_purpose',type:'multi_select',required:true,sub:true,wt:'classification.treatment_train.nf_ro_purpose',
+   label:'What is the primary purpose of the NF / RO system?',
+   condition:{q:'advanced_treatment',op:'any_selected',vals:['nanofiltration','reverse_osmosis']},
+   options:[{id:'softening',l:'Softening (hardness removal)'},{id:'nom_color_removal',l:'NOM / colour removal'},{id:'desalination',l:'Desalination / TDS reduction'},{id:'pfas_removal',l:'PFAS removal'},{id:'nitrate_removal',l:'Nitrate removal'},{id:'micropollutant_removal',l:'Micropollutant / pharmaceutical removal'},{id:'other_nf_ro',l:'Other'}]},
+  {id:'disinfection',type:'multi_select',required:true,wt:'classification.treatment_train.disinfection',
+   label:'What disinfection technology or technologies are used?',
+   help:'Select all — both primary and secondary (residual) disinfection.',
+   options:[{id:'chlorine_gas',l:'Chlorine gas (Cl₂)'},{id:'sodium_hypochlorite',l:'Sodium hypochlorite (NaOCl)'},{id:'calcium_hypochlorite',l:'Calcium hypochlorite (Ca(OCl)₂)'},{id:'chloramines',l:'Chloramination (NH₂Cl — secondary residual)'},{id:'chlorine_dioxide',l:'Chlorine dioxide (ClO₂)'},{id:'ozone',l:'Ozone (O₃)'},{id:'uv_lpho',l:'UV — Low-pressure high-output (LPHO)'},{id:'uv_mp',l:'UV — Medium-pressure (MP)'},{id:'uv_led',l:'UV — LED (emerging)'},{id:'no_disinfection',l:'No disinfection'}]},
+  {id:'dbp_concern',type:'radio',required:true,sub:true,wt:'classification.treatment_train.dbp_concern',
+   label:'Is disinfection by-product (DBP) formation a known concern for this source?',
+   help:'DBPs (THMs, HAAs) form when chlorine reacts with NOM. Regulatory limits apply across all North American jurisdictions.',
+   condition:{q:'disinfection',op:'any_selected',vals:['chlorine_gas','sodium_hypochlorite','calcium_hypochlorite','chloramines','chlorine_dioxide']},
+   options:[{id:'yes_high_nom',l:'Yes — high NOM source (high DBP formation potential)'},{id:'yes_moderate',l:'Yes — moderate concern'},{id:'no_low_risk',l:'No — low NOM, low DBP risk'},{id:'unknown_dbp',l:'Unknown'}]},
+  {id:'ph_stabilization',type:'multi_select',required:false,wt:'classification.treatment_train.ph_stabilization',
+   label:'Does the treatment train include pH adjustment or chemical stabilization?',
+   options:[{id:'coagulation_ph_adjustment',l:'pH adjustment for coagulation (acid or base)'},{id:'lime_softening',l:'Lime softening (Ca(OH)₂)'},{id:'post_treatment_ph',l:'Post-treatment pH correction (CO₂, lime, NaOH)'},{id:'corrosion_inhibitor',l:'Corrosion inhibitor (orthophosphate, silicate)'},{id:'fluoridation',l:'Fluoridation (NaF or H₂SiF₆)'},{id:'none_ph',l:'None'}]},
+  {id:'instrumentation_scada',type:'radio',required:true,wt:'classification.treatment_train.instrumentation_scada',
+   label:'What level of instrumentation and control is planned?',
+   options:[{id:'manual_basic',l:'Manual / basic — local controls, limited automation'},{id:'semi_automated',l:'Semi-automated — PLCs, local HMI, limited SCADA'},{id:'full_scada',l:'Full SCADA — remote monitoring, automated control loops'},{id:'smart_plant',l:'Smart plant / digital twin — AI-assisted process control'}]}
+ ]},
+ {key:'reg',label:'Regulatory',title:'Regulatory Context',desc:'Jurisdictions feed the regAssist jurisdiction discovery stage. Subdomains are auto-derived.',questions:[
+  {id:'distribution_system',type:'radio',required:true,wt:'classification.distribution_system',
+   label:'Does this project include a distribution system or transmission main?',
+   options:[{id:'yes_full_distribution',l:'Yes — full distribution network (pipes to end users)'},{id:'yes_transmission_only',l:'Yes — transmission main only (bulk water transfer)'},{id:'plant_only',l:'Plant only — water transferred at plant gate'},{id:'onsite_only',l:'Onsite use only (no external distribution)'}]},
+  {id:'storage_type',type:'multi_select',required:false,wt:'classification.storage_type',
+   label:'What type of treated water storage is included?',
+   options:[{id:'ground_reservoir',l:'Ground-level reservoir / clearwell (CT for disinfection)'},{id:'elevated_tank',l:'Elevated storage tank / water tower'},{id:'underground_reservoir',l:'Underground / buried reservoir'},{id:'pressure_tank',l:'Pressure tank / hydropneumatic system (small systems)'},{id:'no_storage',l:'No dedicated storage'}]},
+  {id:'regulatory_jurisdiction',type:'multi_select',required:true,wt:'project.regulatory_jurisdiction',
+   label:'What is the primary regulatory jurisdiction for this project?',
+   help:'Subdomains are automatically derived from your source and use case selections above.',
+   options:[{id:'canada_federal',l:'Canada — Federal (GCDWQ — Health Canada)'},{id:'canada_quebec',l:'Canada — Québec (RQEP — MELCCFP)'},{id:'canada_ontario',l:'Canada — Ontario (SDWA — O. Reg. 170/03)'},{id:'canada_bc',l:'Canada — British Columbia (Drinking Water Protection Act)'},{id:'canada_alberta',l:'Canada — Alberta (Water Act / EPEA)'},{id:'canada_other',l:'Canada — Other province or territory'},{id:'usa_federal',l:'USA — Federal (SDWA — EPA NPDWR)'},{id:'usa_state',l:'USA — State-level (specify in notes)'},{id:'other_jurisdiction',l:'Other country / jurisdiction (specify in notes)'}]},
+  {id:'project_free_description',type:'text_area',required:false,wt:'project.description',
+   label:'Briefly describe anything important about the project.',
+   help:'Optional but recommended. Key water quality parameters, site constraints, technologies under consideration, specific pollutants (PFAS, microplastics, heavy metals, pathogens), flow variability, regulatory history.',
+   placeholder:'e.g., Ontario — City of Hamilton, expansion 80,000→120,000 m³/day. Source: Lake Ontario. Known issues: zebra mussel fouling, elevated NOM in spring.'}
+ ]}
+];
+
+// ── BUG-01: filtration mutual exclusion ─────────────────────
+function filtExcl(sel,cur){
+  const NO='no_filtration',T=['rapid_sand_filter','dual_media_filter','slow_sand_filter','gac_filter','pressure_filter','ultrafiltration','microfiltration'];
+  if(sel===NO)return[NO];
+  if(T.includes(sel))return cur.filter(v=>v!==NO);
+  return cur;
+}
+
+// ── STATE ────────────────────────────────────────────────────
+let step=0,ans={},locOk=false,locD={lat:null,lng:null,hint:''};
+
+// ── CONDITIONS ───────────────────────────────────────────────
+function vis(q){
+  if(!q.condition)return true;
+  const{q:pid,op,val,vals}=q.condition,pa=ans[pid];
+  if(op==='equals')return pa===val;
+  if(op==='any_selected'){if(Array.isArray(pa))return pa.some(v=>vals.includes(v));return vals.includes(pa);}
+  return true;
+}
+
+// ── RENDER ───────────────────────────────────────────────────
+function rSlabs(){
+  document.getElementById('slabs').innerHTML=STEPS.map((s,i)=>{
+    let c='slab';if(i===step)c+=' active';else if(i<step)c+=' done';
+    return`<div class="${c}" onclick="goS(${i})">${i<step?'✓ ':''}${s.label}</div>`;
+  }).join('');
+  document.getElementById('sc').textContent=step+1;
+  document.getElementById('st').textContent=STEPS.length;
+}
+
+function rStep(){
+  document.getElementById('verr').classList.remove('vis');
+  document.getElementById('snote').style.display=step===0?'flex':'none';
+  document.getElementById('fc').innerHTML=step===0?rLoc():rQ();
+  document.getElementById('rp').style.display='none';
+  document.getElementById('fc').style.display='block';
+  rNavBtns();
+  // pre-select locked options
+  ['water_families','drinking_water_subscopes'].forEach(qid=>{
+    const qo=STEPS.flatMap(s=>s.questions).find(q=>q.id===qid);
+    if(qo&&qo.preselected){
+      if(!Array.isArray(ans[qid]))ans[qid]=[...qo.preselected];
+      qo.preselected.forEach(v=>{
+        const cb=document.querySelector(`input[data-qid="${qid}"][data-id="${v}"]`);
+        if(cb){cb.checked=true;cb.closest('.opt').classList.add('sel');}
+      });
+    }
+  });
+  attachEvts();
+  updVis();
+  window.scrollTo(0,0);
+}
+
+function rLoc(){
+  if(locOk)return`<div class="card"><div class="ch"><div class="cnum">Step 1 of ${STEPS.length}</div><div class="ctitle">Project Location</div><div class="cdesc">Coordinates feed regAssist jurisdiction discovery.</div></div>
+  <div class="cbody"><div class="loc-ok"><span class="lck">✅</span><div class="li2"><strong>Location confirmed</strong><br><span class="lco">Lat:${locD.lat.toFixed(5)}, Lng:${locD.lng.toFixed(5)}</span>${locD.hint?`<br><span style="font-size:12px;color:var(--muted)">${locD.hint}</span>`:''}</div><button class="btn-re" onclick="resetLoc()">Change</button></div></div></div>`;
+  return`<div class="card"><div class="ch"><div class="cnum">Step 1 of ${STEPS.length}</div><div class="ctitle">Project Location</div><div class="cdesc">Locate your project. Coordinates feed regAssist jurisdiction discovery.</div></div>
+  <div class="cbody"><div class="loc-ph"><div class="li">📍</div><p>Click below to confirm the project location.<br><em style="font-size:11px;color:#aab">(In production: interactive map with address search)</em></p><button class="btn-loc" onclick="simLoc()">📍 Confirm Project Location</button></div></div></div>`;
+}
+
+function rQ(){
+  const s=STEPS[step];
+  return`<div class="card"><div class="ch"><div class="cnum">Step ${step+1} of ${STEPS.length}</div><div class="ctitle">${s.title}</div><div class="cdesc">${s.desc}</div></div>
+  <div class="cbody">${s.questions.map(q=>rQBlock(q)).join('')}</div></div>`;
+}
+
+function rQBlock(q){
+  const v=vis(q);let c='qb';if(!v)c+=' hidden';if(q.sub)c+=' sub';
+  let h='';
+  if(q.sub)h+=`<div class="qsub">↳ Follow-up question</div>`;
+  h+=`<div class="ql">${q.label}${q.required?'<span class="qr">*</span>':''}</div>`;
+  if(q.help)h+=`<div class="qh">${q.help}</div>`;
+  if(q.id==='water_families'||q.id==='drinking_water_subscopes')
+    h+=`<div class="pre-note">✓ Pre-selected option is locked and cannot be deselected for this questionnaire.</div>`;
+  if(q.type==='radio'){
+    const sv=ans[q.id];
+    h+=`<div class="opts">`;
+    q.options.forEach(o=>{const s2=sv===o.id;h+=`<label class="opt${s2?' sel':''}" for="o_${q.id}_${o.id}"><input type="radio" name="${q.id}" id="o_${q.id}_${o.id}" value="${o.id}"><span class="ol">${o.l}</span></label>`;});
+    h+=`</div>`;
+  }else if(q.type==='multi_select'){
+    const sv=Array.isArray(ans[q.id])?ans[q.id]:[];
+    h+=`<div class="opts">`;
+    q.options.forEach(o=>{
+      const s2=sv.includes(o.id),lk=q.locked&&q.locked.includes(o.id);
+      h+=`<label class="opt${s2?' sel':''}${lk?' locked':''}" for="o_${q.id}_${o.id}"><input type="checkbox" id="o_${q.id}_${o.id}" data-qid="${q.id}" data-id="${o.id}" ${s2?'checked':''} ${lk?'disabled':''}><span class="ol">${o.l}</span></label>`;
+    });
+    h+=`</div>`;
+  }else if(q.type==='text_area'){
+    h+=`<textarea class="qta" id="ta_${q.id}" placeholder="${q.placeholder||''}">${ans[q.id]||''}</textarea>`;
+  }
+  return`<div class="${c}" id="qb_${q.id}">${h}</div>`;
+}
+
+// ── EVENTS ───────────────────────────────────────────────────
+function attachEvts(){
+  document.querySelectorAll('input[type="radio"]').forEach(i=>{
+    i.addEventListener('change',e=>{
+      ans[e.target.name]=e.target.value;
+      document.querySelectorAll(`input[name="${e.target.name}"]`).forEach(r=>r.closest('.opt').classList.toggle('sel',r.checked));
+      updVis();
+    });
+  });
+  document.querySelectorAll('input[type="checkbox"]').forEach(i=>{
+    i.addEventListener('change',e=>{
+      const qid=e.target.dataset.qid,val=e.target.dataset.id;
+      let cv=[...document.querySelectorAll(`input[data-qid="${qid}"]:checked`)].map(c=>c.dataset.id);
+      if(qid==='filtration'){
+        cv=filtExcl(val,cv);
+        document.querySelectorAll(`input[data-qid="${qid}"]`).forEach(cb=>{cb.checked=cv.includes(cb.dataset.id);cb.closest('.opt').classList.toggle('sel',cb.checked);});
+      }else if(qid==='water_families'||qid==='drinking_water_subscopes'){
+        const q=STEPS.flatMap(s=>s.questions).find(q=>q.id===qid);
+        if(q&&q.locked)q.locked.forEach(l=>{if(!cv.includes(l))cv.push(l);});
+        document.querySelectorAll(`input[data-qid="${qid}"]`).forEach(cb=>cb.closest('.opt').classList.toggle('sel',cv.includes(cb.dataset.id)));
+      }else{
+        e.target.closest('.opt').classList.toggle('sel',e.target.checked);
+      }
+      ans[qid]=cv;updVis();
+    });
+  });
+  document.querySelectorAll('.qta').forEach(ta=>{ta.addEventListener('input',e=>{ans[ta.id.replace('ta_','')]=e.target.value;});});
+}
+
+function updVis(){
+  const s=STEPS[step];if(!s||!s.questions)return;
+  s.questions.forEach(q=>{
+    const b=document.getElementById(`qb_${q.id}`);if(!b)return;
+    const v=vis(q);b.classList.toggle('hidden',!v);
+    if(!v){delete ans[q.id];document.querySelectorAll(`input[name="${q.id}"],input[data-qid="${q.id}"]`).forEach(i=>i.checked=false);}
+  });
+}
+
+// ── LOCATION ─────────────────────────────────────────────────
+function simLoc(){locD={lat:45.4042,lng:-71.8929,hint:'Sherbrooke, Québec, Canada (demo)'};locOk=true;ans['location_gps']=locD;rStep();}
+function resetLoc(){locOk=false;locD={lat:null,lng:null,hint:''};delete ans['location_gps'];rStep();}
+
+// ── VALIDATION ───────────────────────────────────────────────
+function validate(){
+  const el=document.getElementById('verr');el.classList.remove('vis');
+  document.querySelectorAll('.qb.err').forEach(b=>b.classList.remove('err'));
+  if(step===0){if(!locOk){el.textContent='⚠️ Please confirm the project location before proceeding.';el.classList.add('vis');return false;}return true;}
+  const errs=[];
+  STEPS[step].questions.forEach(q=>{
+    if(!q.required||!vis(q))return;
+    const v=ans[q.id];
+    if((q.type==='radio'&&!v)||(q.type==='multi_select'&&(!v||v.length===0))){
+      errs.push(q.id);const b=document.getElementById(`qb_${q.id}`);if(b)b.classList.add('err');
+    }
+  });
+  if(errs.length){el.textContent=`⚠️ Please answer all required questions (${errs.length} missing).`;el.classList.add('vis');window.scrollTo(0,0);return false;}
+  return true;
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────
+function go(d){
+  if(d===1){if(!validate())return;if(step<STEPS.length-1){step++;rSlabs();rStep();}else submit();}
+  else{if(step>0){step--;rSlabs();rStep();}}
+}
+function goS(i){if(i>=step)return;step=i;rSlabs();rStep();}
+function rNavBtns(){
+  document.getElementById('bb').style.display=step===0?'none':'inline-block';
+  const bn=document.getElementById('bn');
+  if(step===STEPS.length-1){bn.textContent='Submit →';bn.className='btn btn-sub';}
+  else{bn.textContent='Next →';bn.className='btn btn-next';}
+}
+
+// ── CLASSIFICATION BUILDER ───────────────────────────────────
+function buildCls(){
+  const a=ans;
+  const src=Array.isArray(a['water_source_type'])?a['water_source_type']:[];
+  const isSW=src.some(v=>['river_stream','lake_reservoir','large_lake_system','ocean_coastal'].includes(v));
+  const isGW=src.some(v=>['confined_aquifer','unconfined_aquifer'].includes(v));
+  const dws=Array.isArray(a['drinking_water_subscopes'])?a['drinking_water_subscopes']:['drinking_water_treatment'];
+  const useCases=[...new Set(['drinking_water_treatment',...dws.filter(v=>v!=='drinking_water_treatment'),...((['yes_full_distribution','yes_transmission_only'].includes(a['distribution_system']))?['drinking_water_distribution']:[]),...(a['abstraction_permit_status']==='new_permit_required'?['water_abstraction_allocation']:[])])];
+  const sub=['drinking_water','water_abstraction_allocation'];
+  const spz=a['source_protection_zone'];
+  if(['yes_tier1','yes_tier2','yes_tier3'].includes(spz))sub.push('source_water_protection');
+  if(['yes_confirmed','yes_suspected'].includes(a['downstream_drinking_water_intake']))if(!sub.includes('source_water_protection'))sub.push('source_water_protection');
+  const sz=Array.isArray(a['sensitive_zones'])?a['sensitive_zones']:[];
+  if(sz.some(v=>['drinking_water_source_protection_area','drinking_water_watershed'].includes(v)))if(!sub.includes('source_water_protection'))sub.push('source_water_protection');
+  if(isSW)sub.push('surface_water');
+  if(isGW)sub.push('groundwater');
+  const rm=['source_water','raw_water','treated_drinking_water'];
+  if(['yes_full_distribution','yes_transmission_only'].includes(a['distribution_system']))rm.push('distribution_water');
+  if(a['distribution_system']==='yes_full_distribution')rm.push('tap_water');
+  const act=['abstraction','treatment','reporting','recordkeeping'];
+  if(['feasibility_predesign','detailed_design'].includes(a['project_phase']))act.push('design_sizing');
+  if(a['instrumentation_scada']&&a['instrumentation_scada']!=='manual_basic')act.push('monitoring');
+  const st=Array.isArray(a['storage_type'])?a['storage_type']:[];
+  if(!st.includes('no_storage')&&st.length>0)act.push('storage');
+  if(a['abstraction_permit_status']&&a['abstraction_permit_status']!=='existing_permit_valid')act.push('permitting_approval');
+  const cp=['raw_water_intake','treatment_plant_inlet','post_treatment'];
+  if(!st.includes('no_storage')&&st.length>0)cp.push('entry_point_to_distribution');
+  if(a['distribution_system']==='yes_full_distribution'){cp.push('distribution_system');cp.push('customer_tap');}
+  const filt=Array.isArray(a['filtration'])?a['filtration']:[];
+  const filtT=filt.filter(v=>v!=='no_filtration');
+  const noFiltFlag=filt.includes('no_filtration')&&filtT.length===0;
+  return{questionnaire_id:'dwtp_intake_v3',version:'3.0',canonical_ref:'ontology_canonical.yaml#v0.2.0',use_cases:useCases,subdomains:[...new Set(sub)],regulated_media:[...new Set(rm)],activities:[...new Set(act)],compliance_points:[...new Set(cp)],obligation_types:['treatment','design','monitoring','operational','reporting'],project:{promoter_type:a['promoter_type'],industrial_sector:a['industrial_sector']||null,project_phase:a['project_phase'],project_capacity:a['project_capacity'],project_nature:a['project_nature'],water_families:a['water_families'],drinking_water_subscopes:dws},source:{water_source_type:src,source_protection_zone:spz,downstream_drinking_water_intake:a['downstream_drinking_water_intake'],sensitive_zones:sz,abstraction_permit_status:a['abstraction_permit_status'],source_regime:a['source_regime']||null,turbidity_range:a['turbidity_range'],microbial_risk:a['microbial_risk'],chemical_concerns:a['chemical_concerns']||[],source_variability:a['source_variability']},treatment_train:{pre_treatment:a['pre_treatment']||[],coagulation_flocculation:a['coagulation_flocculation'],coagulant_type:a['coagulant_type']||null,sedimentation_type:a['sedimentation_type']||null,filtration_technologies:filtT,no_filtration_flag:noFiltFlag,membrane_module_config:a['membrane_module_config']||null,membrane_integrity_testing:a['membrane_integrity_testing']||null,advanced_treatment:a['advanced_treatment']||[],nf_ro_purpose:a['nf_ro_purpose']||null,disinfection:a['disinfection']||[],dbp_concern:a['dbp_concern']||null,ph_stabilization:a['ph_stabilization']||[],instrumentation_scada:a['instrumentation_scada']},distribution:{distribution_system:a['distribution_system'],storage_type:st},regulatory:{jurisdictions:a['regulatory_jurisdiction']||[],description:a['project_free_description']||null}};
+}
+
+// ── FORMAT HELPERS ───────────────────────────────────────────
+function T(v,canon=false){
+  if(!v)return'<span style="color:#aaa">—</span>';
+  if(Array.isArray(v)){if(v.length===0)return'<span style="color:#aaa">—</span>';return v.map(x=>`<span class="${canon?'tc':'t'}">${x}</span>`).join('');}
+  if(typeof v==='object'&&v.lat)return`<span class="t">Lat:${v.lat.toFixed(4)}</span> <span class="t">Lng:${v.lng.toFixed(4)}</span>`;
+  return`<span class="${canon?'tc':'t'}">${v}</span>`;
+}
+
+function buildChain(){
+  const a=ans,ch=[];
+  const pre=a['pre_treatment'];if(pre&&Array.isArray(pre)&&!pre.includes('none_pretreatment'))ch.push('Pre-treatment');
+  const c=a['coagulation_flocculation'];if(c&&c!=='no_coagulation')ch.push('Coagulation/Floc');
+  const f=a['filtration']||[];if(f.length&&!f.includes('no_filtration'))ch.push('Filtration');
+  const adv=a['advanced_treatment']||[];if(adv.length&&!adv.includes('none_advanced'))ch.push('Advanced');
+  const d=a['disinfection']||[];if(d.length&&!d.includes('no_disinfection'))ch.push('Disinfection');
+  return ch;
+}
+
+// ── SUBMIT ───────────────────────────────────────────────────
+function submit(){
+  if(!validate())return;
+  const cls=buildCls(),ch=buildChain();
+  const chainH=ch.length?`<div class="chain">${ch.map((s,i)=>`${i?'<span class="ca">→</span>':''}<span class="cs">${s}</span>`).join('')}</div>`:'<span style="color:#aaa">Not specified</span>';
+  const filt=ans['filtration']||[];
+  const filtD=filt.includes('no_filtration')&&filt.filter(v=>v!=='no_filtration').length===0?'<span class="tw">no_filtration_flag: true</span> <span style="color:#aaa;font-size:11px">filtration_technologies: []</span>':T(filt.filter(v=>v!=='no_filtration'));
+  document.getElementById('fc').style.display='none';
+  document.getElementById('snote').style.display='none';
+  const rp=document.getElementById('rp');
+  rp.innerHTML=`
+  <div class="rh"><h2>✅ Intake Complete — Classification Object</h2><p>Pipeline-ready output — ontology_canonical v0.2.0 · project_intake_canonical v0.2.2</p></div>
+  <div class="rb">
+    <div class="rs"><h3>🗺️ Pipeline Classification Output</h3>
+      <div class="po">
+        <h4>use_cases</h4><div style="margin-bottom:10px">${T(cls.use_cases,true)}</div>
+        <h4>subdomains — acceptance gate</h4><div style="margin-bottom:10px">${T(cls.subdomains,true)}</div>
+        <h4>regulated_media</h4><div style="margin-bottom:10px">${T(cls.regulated_media,true)}</div>
+        <h4>activities</h4><div style="margin-bottom:10px">${T(cls.activities,true)}</div>
+        <h4>compliance_points</h4><div style="margin-bottom:10px">${T(cls.compliance_points,true)}</div>
+        <h4>obligation_types</h4><div>${T(cls.obligation_types,true)}</div>
+      </div>
+    </div>
+    <div class="rs"><h3>📍 Location</h3>
+      <div class="rrow"><span class="rk">GPS</span><span class="rv">${T(ans['location_gps'])}</span></div>
+      ${locD.hint?`<div class="rrow"><span class="rk">Jurisdiction hint</span><span class="rv"><span class="t">${locD.hint}</span></span></div>`:''}
+    </div>
+    <div class="rs"><h3>🏗️ Project</h3>
+      <div class="rrow"><span class="rk">Promoter type</span><span class="rv">${T(cls.project.promoter_type)}</span></div>
+      ${cls.project.industrial_sector?`<div class="rrow"><span class="rk">Industrial sector <em style="font-size:10px;color:var(--muted)">(discovery only)</em></span><span class="rv">${T(cls.project.industrial_sector)}</span></div>`:''}
+      <div class="rrow"><span class="rk">Project phase</span><span class="rv">${T(cls.project.project_phase)}</span></div>
+      <div class="rrow"><span class="rk">Capacity</span><span class="rv">${T(cls.project.project_capacity)}</span></div>
+      <div class="rrow"><span class="rk">Nature</span><span class="rv">${T(cls.project.project_nature)}</span></div>
+      <div class="rrow"><span class="rk">Water families</span><span class="rv">${T(cls.project.water_families,true)}</span></div>
+      <div class="rrow"><span class="rk">DW subscopes</span><span class="rv">${T(cls.project.drinking_water_subscopes,true)}</span></div>
+    </div>
+    <div class="rs"><h3>🌊 Raw Water Source</h3>
+      <div class="rrow"><span class="rk">Source type</span><span class="rv">${T(cls.source.water_source_type)}</span></div>
+      <div class="rrow"><span class="rk">Source protection zone</span><span class="rv">${T(cls.source.source_protection_zone)}</span></div>
+      <div class="rrow"><span class="rk">Downstream DW intake</span><span class="rv">${T(cls.source.downstream_drinking_water_intake)}</span></div>
+      <div class="rrow"><span class="rk">Sensitive zones</span><span class="rv">${T(cls.source.sensitive_zones)}</span></div>
+      <div class="rrow"><span class="rk">Abstraction permit</span><span class="rv">${T(cls.source.abstraction_permit_status)}</span></div>
+      ${cls.source.source_regime?`<div class="rrow"><span class="rk">Hydrological regime</span><span class="rv">${T(cls.source.source_regime)}</span></div>`:''}
+    </div>
+    <div class="rs"><h3>🔬 Raw Water Quality</h3>
+      <div class="rrow"><span class="rk">Turbidity</span><span class="rv">${T(cls.source.turbidity_range)}</span></div>
+      <div class="rrow"><span class="rk">Microbial risk</span><span class="rv">${T(cls.source.microbial_risk)}</span></div>
+      <div class="rrow"><span class="rk">Chemical concerns</span><span class="rv">${T(cls.source.chemical_concerns)}</span></div>
+      <div class="rrow"><span class="rk">Variability</span><span class="rv">${T(cls.source.source_variability)}</span></div>
+    </div>
+    <div class="rs"><h3>⚙️ Treatment Train</h3>
+      <div class="rrow"><span class="rk">Treatment sequence</span><span class="rv">${chainH}</span></div>
+      <div class="rrow"><span class="rk">Pre-treatment</span><span class="rv">${T(cls.treatment_train.pre_treatment)}</span></div>
+      <div class="rrow"><span class="rk">Coagulation / flocculation</span><span class="rv">${T(cls.treatment_train.coagulation_flocculation)}</span></div>
+      ${cls.treatment_train.coagulant_type?`<div class="rrow"><span class="rk">Coagulant type</span><span class="rv">${T(cls.treatment_train.coagulant_type)}</span></div>`:''}
+      ${cls.treatment_train.sedimentation_type?`<div class="rrow"><span class="rk">Sedimentation type</span><span class="rv">${T(cls.treatment_train.sedimentation_type)}</span></div>`:''}
+      <div class="rrow"><span class="rk">Filtration</span><span class="rv">${filtD}</span></div>
+      ${cls.treatment_train.membrane_module_config?`<div class="rrow"><span class="rk">Membrane config</span><span class="rv">${T(cls.treatment_train.membrane_module_config)}</span></div>`:''}
+      ${cls.treatment_train.membrane_integrity_testing?`<div class="rrow"><span class="rk">Membrane integrity testing</span><span class="rv">${T(cls.treatment_train.membrane_integrity_testing)}</span></div>`:''}
+      <div class="rrow"><span class="rk">Advanced treatment</span><span class="rv">${T(cls.treatment_train.advanced_treatment)}</span></div>
+      ${cls.treatment_train.nf_ro_purpose?`<div class="rrow"><span class="rk">NF/RO purpose</span><span class="rv">${T(cls.treatment_train.nf_ro_purpose)}</span></div>`:''}
+      <div class="rrow"><span class="rk">Disinfection</span><span class="rv">${T(cls.treatment_train.disinfection)}</span></div>
+      ${cls.treatment_train.dbp_concern?`<div class="rrow"><span class="rk">DBP concern</span><span class="rv">${T(cls.treatment_train.dbp_concern)}</span></div>`:''}
+      <div class="rrow"><span class="rk">pH / stabilization</span><span class="rv">${T(cls.treatment_train.ph_stabilization)}</span></div>
+      <div class="rrow"><span class="rk">Instrumentation / SCADA</span><span class="rv">${T(cls.treatment_train.instrumentation_scada)}</span></div>
+    </div>
+    <div class="rs"><h3>🚰 Distribution & Regulatory</h3>
+      <div class="rrow"><span class="rk">Distribution system</span><span class="rv">${T(cls.distribution.distribution_system)}</span></div>
+      <div class="rrow"><span class="rk">Storage type</span><span class="rv">${T(cls.distribution.storage_type)}</span></div>
+      <div class="rrow"><span class="rk">Jurisdictions</span><span class="rv">${T(cls.regulatory.jurisdictions)}</span></div>
+      ${cls.regulatory.description?`<div class="rrow"><span class="rk">Description</span><span class="rv" style="font-style:italic">${cls.regulatory.description}</span></div>`:''}
+    </div>
+    <button class="btn-re2" onclick="restart()">← Start New Intake</button>
+  </div>`;
+  rp.style.display='block';
+  document.getElementById('nav').style.display='none';
+  window.scrollTo(0,0);
+}
+
+function restart(){
+  ans={};locOk=false;locD={lat:null,lng:null,hint:''};step=0;
+  document.getElementById('nav').style.display='block';
+  rSlabs();rStep();
+}
+
+rSlabs();rStep();
+</script>
+</body>
+</html>

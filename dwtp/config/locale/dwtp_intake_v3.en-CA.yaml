@@ -1,0 +1,636 @@
+# AquaForge regAssist — DWTP Intake Questionnaire UI Labels
+# Locale: English (Canada)
+# Canonical ref: dwtp_intake_v3.canonical.yaml
+# Version: 3.0
+# Date: 2026-06-09
+# Aligned with: project_intake_en-CA.yaml (label style, help text conventions, short_label)
+
+locale: en-CA
+questionnaire_id: dwtp_intake_v3
+
+ui:
+  title: "Drinking Water Treatment Plant — Regulatory Intake"
+  subtitle: "Answer the following questions to identify the regulations applicable to your drinking water project."
+  progress_label: "Question {current} of {total}"
+  intake_complete_label: "Intake complete"
+  previous_button: "Previous"
+  next_button: "Next"
+  submit_button: "Submit"
+  select_all_hint: "Select all that apply."
+  select_one_hint: "Select the best match."
+  scope_note: "Scope: Drinking water production only. Process wastewater streams (filter backwash, sedimentation sludge, membrane concentrate) are outside the scope of this questionnaire and are handled separately by the regAssist platform."
+
+step_labels:
+  step_0: "Project Location"
+  step_1: "Project Characterization"
+  step_2: "Raw Water Source"
+  step_3: "Raw Water Quality"
+  step_4: "Treatment Train"
+  step_5: "Regulatory Context"
+
+location_ui:
+  title: "Where will the drinking water facility be located?"
+  subtitle: "You may proceed to the questionnaire now and confirm the location later. However, location must be confirmed before final submission."
+  search_placeholder: "Enter city, region or coordinates..."
+  confirm_button: "✓ Confirm location"
+  confirmed_badge: "Location confirmed"
+  not_confirmed_badge: "Location not confirmed"
+  invitation_soft: "Location not yet confirmed — you can continue and confirm before submitting."
+  submit_block_message: "Please confirm the project location before submitting. Enter a city or coordinates above and click Confirm location."
+  fields:
+    country: "Country"
+    province_state: "Province / State / Region"
+    municipality: "Municipality / City"
+
+questions:
+
+  promoter_type:
+    label: "What type of organization is leading this project?"
+    help: "The promoter type determines which regulatory regimes apply (municipal bylaws, industrial sector regulations, federal permits, etc.)."
+    options:
+      municipal:
+        label: "Municipal authority / public water utility"
+      industrial:
+        label: "Industrial company (sector to be specified)"
+      private_utility:
+        label: "Private operator / concession holder"
+      institutional:
+        label: "Institutional facility (hospital, university, campus, military base)"
+      federal_government:
+        label: "Federal or national government agency"
+      real_estate_developer:
+        label: "Real estate developer"
+      other:
+        label: "Other (describe in the final free-text question)"
+    short_label: "Organization type:"
+
+  industrial_sector:
+    label: "What is the primary industrial sector?"
+    help: "This information is used for discovery and classification purposes only — it does not determine regulatory applicability by itself. Select all that apply if the facility spans multiple sectors."
+    options:
+      food_beverage:
+        label: "Food and beverage processing"
+      chemical_pharma:
+        label: "Chemical and pharmaceutical manufacturing"
+      semiconductor_electronics:
+        label: "Semiconductor and electronics manufacturing"
+      mining_metals:
+        label: "Mining, quarrying and metal processing"
+      petroleum_refining:
+        label: "Petroleum refining and petrochemicals"
+      power_generation:
+        label: "Power generation (thermal, nuclear, hydro)"
+      other_industrial:
+        label: "Other industrial sector (describe in the final free-text question)"
+    short_label: "Industrial sector:"
+
+  project_phase:
+    label: "What phase is the project in?"
+    help: "Select the best match. The project phase determines which permits and authorizations must be obtained at this stage."
+    options:
+      feasibility_predesign:
+        label: "Feasibility study / pre-design"
+      detailed_design:
+        label: "Detailed engineering design"
+      new_construction:
+        label: "New project — construction"
+      expansion:
+        label: "Expansion / capacity increase"
+      retrofit_upgrade:
+        label: "Rehabilitation / technology upgrade"
+      operation:
+        label: "Operation of an existing system"
+      unknown:
+        label: "Unknown / to be determined"
+    short_label: "Project phase:"
+
+  project_capacity:
+    label: "What is the nominal treatment or production capacity?"
+    help: "An order-of-magnitude estimate is sufficient. Capacity thresholds determine mandatory environmental impact assessment obligations, operator certification class, and monitoring frequency requirements."
+    options:
+      micro:
+        label: "< 10 m³/day (approx. < 100 PE) — decentralized systems, single buildings"
+      small:
+        label: "10–500 m³/day (approx. 100–5,000 PE) — small communities, light industrial, rural systems"
+      medium:
+        label: "500–10,000 m³/day (approx. 5,000–100,000 PE) — mid-size communities, moderate industries"
+      large:
+        label: "10,000–100,000 m³/day (approx. 100,000–1,000,000 PE) — large cities, heavy industries"
+      very_large:
+        label: "> 100,000 m³/day (approx. > 1,000,000 PE) — major metropolitan areas, large industrial complexes"
+      unknown:
+        label: "Not yet determined / to be assessed"
+    short_label: "Capacity:"
+
+  project_nature:
+    label: "What best describes the nature of this project?"
+    options:
+      new_greenfield:
+        label: "New greenfield plant (no existing infrastructure)"
+      new_brownfield:
+        label: "New plant on existing site (brownfield)"
+      upgrade_existing:
+        label: "Upgrade / retrofit of existing treatment process"
+      capacity_expansion:
+        label: "Capacity expansion (adding parallel treatment trains)"
+      emergency_interim:
+        label: "Emergency or interim treatment system"
+    short_label: "Project nature:"
+
+  water_families:
+    label: "Which water scopes are part of this project?"
+    help: "Drinking water is pre-selected for this questionnaire and cannot be deselected."
+    options:
+      drinking_water:
+        label: "Drinking water (production, treatment, distribution) ✓ always selected"
+      other_unsure:
+        label: "Other / not sure — describe in the final question"
+    short_label: "Water scope:"
+
+  drinking_water_subscopes:
+    label: "Which drinking water scopes apply to this project?"
+    help: "Drinking water treatment is always selected. Select additional scopes if applicable."
+    options:
+      drinking_water_treatment:
+        label: "Drinking water treatment plant (DWTP) ✓ always selected"
+      drinking_water_distribution:
+        label: "Distribution network (pipes, storage tanks, pumping stations)"
+      source_water_intake:
+        label: "Raw water intake / abstraction point (new or modified intake structure)"
+      desalination:
+        label: "Desalination (seawater or brackish water treatment)"
+    short_label: "Drinking water scope:"
+
+  water_source_type:
+    label: "What is the nature of the raw water source?"
+    help: "Select all sources that will be abstracted or used by the project. If your facility is supplied by the municipal distribution network and does not abstract raw water itself, select 'Pre-treated municipal water supply'."
+    options:
+      river_stream:
+        label: "River / stream (flowing surface water)"
+      lake_reservoir:
+        label: "Lake / reservoir (standing surface water)"
+      large_lake_system:
+        label: "Large lake system (Great Lakes, Lake Geneva, Caspian Sea, African Great Lakes…)"
+      ocean_coastal:
+        label: "Ocean / coastal / estuarine water (desalination or marine intake)"
+      confined_aquifer:
+        label: "Confined aquifer (artesian groundwater)"
+      unconfined_aquifer:
+        label: "Unconfined aquifer / water table (phreatic groundwater)"
+      rainwater_harvesting:
+        label: "Rainwater harvesting / rooftop collection"
+      municipal_supply:
+        label: "Pre-treated municipal water supply — facility is connected to the municipal distribution network (no raw water abstraction on-site)"
+    short_label: "Water source:"
+
+  source_protection_zone:
+    label: "Is the raw water intake within a formally designated source protection zone?"
+    options:
+      yes_tier1:
+        label: "Yes — Tier 1 / highest protection (e.g., restricted watershed)"
+      yes_tier2:
+        label: "Yes — Tier 2 / moderate protection"
+      yes_tier3:
+        label: "Yes — Tier 3 / basic protection"
+      no_designated:
+        label: "No designated source protection zone"
+      unknown:
+        label: "Unknown / under assessment"
+    short_label: "Source protection zone:"
+
+  downstream_drinking_water_intake:
+    label: "Is there a drinking water intake downstream of or affected by this project's water abstraction point?"
+    help: "A downstream drinking water intake significantly increases treatment requirements and may trigger source water protection obligations in most jurisdictions."
+    options:
+      yes_confirmed:
+        label: "Yes — confirmed downstream drinking water intake"
+      yes_suspected:
+        label: "Probable but not confirmed"
+      'false':
+        label: "No downstream drinking water intake identified"
+      unknown:
+        label: "Unknown"
+    short_label: "Downstream drinking water intake:"
+
+  sensitive_zones:
+    label: "Are any protected or environmentally sensitive zones affected by this project's water abstraction?"
+    help: "Select all that apply. Applies to the raw water intake and abstraction location. Automatic detection from GPS coordinates is performed in the background by regAssist."
+    options:
+      drinking_water_source_protection_area:
+        label: "Drinking water source protection zone / wellhead protection area"
+      protected_biodiversity_habitat:
+        label: "Legally protected biodiversity / natural habitat zone"
+      fish_aquatic_habitat:
+        label: "Critical fish or aquatic species habitat"
+      wetland_protected:
+        label: "Protected wetland / marsh / bog"
+      drinking_water_watershed:
+        label: "Drinking water supply watershed / catchment area"
+      floodplain_flood_risk_zone:
+        label: "Floodplain / designated flood risk zone"
+      transboundary_shared_water_body:
+        label: "Transboundary or internationally shared water body"
+      indigenous_traditional_territory:
+        label: "Indigenous / First Nations traditional territory (duty to consult applies)"
+      none_identified:
+        label: "No sensitive or protected zones identified"
+      unknown:
+        label: "Unknown / requires verification"
+    short_label: "Sensitive zones:"
+
+  abstraction_permit_status:
+    label: "What is the water abstraction / taking permit status?"
+    help: "Water taking permits are issued at different regulatory levels depending on jurisdiction. This information feeds the regAssist jurisdiction discovery stage."
+    options:
+      existing_permit_valid:
+        label: "Existing permit — valid and sufficient for planned capacity"
+      existing_permit_amendment:
+        label: "Existing permit — amendment required (capacity change or new intake)"
+      new_permit_required:
+        label: "New permit required"
+      permit_not_required:
+        label: "No permit required (jurisdiction-specific exemption)"
+      unknown_permit:
+        label: "Unknown / under assessment"
+    short_label: "Abstraction permit:"
+
+  source_regime:
+    label: "What is the hydrological regime of the source?"
+    options:
+      perennial:
+        label: "Perennial (flows year-round)"
+      seasonal_intermittent:
+        label: "Seasonal or intermittent (dry periods expected)"
+      regulated_controlled:
+        label: "Regulated / controlled (dam-managed flow)"
+      tidal_influenced:
+        label: "Tidally influenced (saltwater intrusion risk)"
+    short_label: "Source regime:"
+
+  turbidity_range:
+    label: "What is the typical raw water turbidity range?"
+    help: "NTU = Nephelometric Turbidity Units. Turbidity is a key driver of coagulation and filtration design requirements."
+    options:
+      very_low:
+        label: "Very low — < 1 NTU (groundwater or highly protected surface source)"
+      low:
+        label: "Low — 1–10 NTU (clear lake or protected surface water)"
+      moderate:
+        label: "Moderate — 10–100 NTU (typical river or lake)"
+      high:
+        label: "High — 100–1,000 NTU (turbid river, post-storm conditions)"
+      very_high:
+        label: "Very high — > 1,000 NTU (glacial melt or highly turbid source)"
+      highly_variable:
+        label: "Highly variable (major seasonal extremes)"
+      unknown_turbidity:
+        label: "Unknown"
+    short_label: "Turbidity:"
+
+  microbial_risk:
+    label: "What is the known or expected microbial risk level of the source water?"
+    help: "Informs required log-reduction credits under the multi-barrier approach (QMRA / GCDWQ / SDWA)."
+    options:
+      low:
+        label: "Low — protected groundwater or confined aquifer (minimal pathogen risk)"
+      moderate:
+        label: "Moderate — typical surface water (Giardia / Cryptosporidium risk)"
+      high:
+        label: "High — impacted source (upstream WWTP, CSO, or agricultural runoff)"
+      very_high:
+        label: "Very high — highly impacted source (known contamination events)"
+      unknown_microbial:
+        label: "Unknown / not assessed"
+    short_label: "Microbial risk:"
+
+  chemical_concerns:
+    label: "What chemical quality concerns are present or suspected in the raw water?"
+    help: "Select all that apply. Drives selection of advanced treatment steps and regAssist source discovery targeting."
+    options:
+      high_nom:
+        label: "High natural organic matter (NOM — disinfection by-product precursors)"
+      hardness_scaling:
+        label: "Hardness / scaling potential (Ca, Mg)"
+      iron_manganese:
+        label: "Iron and/or manganese (Fe/Mn — taste, colour, fouling)"
+      arsenic:
+        label: "Arsenic (As)"
+      nitrates:
+        label: "Nitrates (NO₃⁻ — agricultural source)"
+      fluoride:
+        label: "Fluoride — excess (fluorosis risk)"
+      pfas:
+        label: "PFAS — per- and polyfluoroalkyl substances"
+      taste_odour:
+        label: "Taste and odour compounds (geosmin, MIB — algal origin)"
+      heavy_metals:
+        label: "Heavy metals (Pb, Cd, Cr, etc.)"
+      pesticides_herbicides:
+        label: "Pesticides / herbicides"
+      pharmaceuticals:
+        label: "Pharmaceuticals / emerging contaminants (CECs)"
+      salinity_tds:
+        label: "Salinity / high TDS (> 500 mg/L)"
+      none_known_chem:
+        label: "No significant chemical concerns known"
+    short_label: "Chemical concerns:"
+
+  source_variability:
+    label: "How would you characterize raw water quality variability over time?"
+    options:
+      stable:
+        label: "Stable (groundwater or highly regulated surface source)"
+      seasonal:
+        label: "Seasonal variation (spring snowmelt, fall lake turnover)"
+      event_driven:
+        label: "Event-driven (storm events cause major quality shifts)"
+      highly_variable:
+        label: "Highly variable / unpredictable"
+    short_label: "Source variability:"
+
+  pre_treatment:
+    label: "Does the project include pre-treatment before the main treatment process?"
+    help: "Pre-treatment steps applied before primary coagulation or filtration."
+    options:
+      screening_grit:
+        label: "Screening and grit removal (raw water intake structure)"
+      pre_sedimentation:
+        label: "Pre-sedimentation / settling basin (for highly turbid sources)"
+      pre_chlorination:
+        label: "Pre-chlorination (algae control, Fe/Mn oxidation)"
+      pre_ozonation:
+        label: "Pre-ozonation (colour, taste/odour, micropollutant control)"
+      aeration:
+        label: "Aeration (Fe/Mn removal, CO₂ stripping, H₂S removal — mainly groundwater)"
+      bank_filtration:
+        label: "River bank filtration / managed aquifer recharge (MAR)"
+      none_pretreatment:
+        label: "No pre-treatment"
+    short_label: "Pre-treatment:"
+
+  coagulation_flocculation:
+    label: "Does the project include coagulation / flocculation / sedimentation?"
+    options:
+      yes_conventional:
+        label: "Yes — conventional (rapid mix + flocculation + sedimentation basin)"
+      yes_dissolved_air:
+        label: "Yes — dissolved air flotation (DAF — algae-laden or low-density floc)"
+      yes_ballasted:
+        label: "Yes — ballasted flocculation (Actiflo®, CoMag® or similar)"
+      no_coagulation:
+        label: "No coagulation / flocculation (direct filtration or membrane-only process)"
+    short_label: "Coagulation / flocculation:"
+
+  coagulant_type:
+    label: "What is the primary coagulant type?"
+    options:
+      alum:
+        label: "Aluminum sulfate — alum (Al₂(SO₄)₃)"
+      pac:
+        label: "Polyaluminum chloride (PACl)"
+      ferric_chloride:
+        label: "Ferric chloride (FeCl₃)"
+      ferric_sulfate:
+        label: "Ferric sulfate (Fe₂(SO₄)₃)"
+      combined_coagulants:
+        label: "Combination of coagulants"
+      other_coagulant:
+        label: "Other / not yet selected"
+    short_label: "Coagulant type:"
+
+  sedimentation_type:
+    label: "What type of sedimentation basin is used?"
+    options:
+      conventional_basin:
+        label: "Conventional horizontal-flow settling basin"
+      lamella_settler:
+        label: "Lamella / inclined plate settler (high-rate settler)"
+      sludge_blanket:
+        label: "Sludge blanket clarifier (ACCELATOR®, Pulsator® or similar)"
+      other_sedimentation:
+        label: "Other"
+    short_label: "Sedimentation type:"
+
+  filtration:
+    label: "What filtration technology is used in this project?"
+    help: "Select all filtration steps in the treatment train. Note: \"No filtration\" is mutually exclusive — selecting it clears all other options, and vice versa."
+    options:
+      rapid_sand_filter:
+        label: "Rapid sand filtration (RSF)"
+      dual_media_filter:
+        label: "Dual-media filtration (anthracite + sand)"
+      slow_sand_filter:
+        label: "Slow sand filtration (SSF — biologically active layer)"
+      gac_filter:
+        label: "Granular activated carbon filtration (GAC)"
+      pressure_filter:
+        label: "Pressure filtration"
+      ultrafiltration:
+        label: "Ultrafiltration (UF membranes — 0.01–0.1 µm pore size)"
+      microfiltration:
+        label: "Microfiltration (MF membranes — 0.1–10 µm pore size)"
+      no_filtration:
+        label: "No filtration — disinfection only (groundwater not under direct influence of surface water) ⚠️ clears all other selections"
+    short_label: "Filtration:"
+
+  membrane_module_config:
+    label: "What is the membrane module configuration?"
+    options:
+      hollow_fiber:
+        label: "Hollow fiber (submerged or pressurized)"
+      spiral_wound:
+        label: "Spiral wound"
+      ceramic:
+        label: "Ceramic membrane"
+      other_membrane_config:
+        label: "Other"
+    short_label: "Membrane config:"
+
+  membrane_integrity_testing:
+    label: "Is membrane integrity testing (MIT) planned or implemented?"
+    help: "MIT is required under most North American regulations to claim Cryptosporidium log-reduction credit (LRC)."
+    options:
+      yes_pressure_decay:
+        label: "Yes — pressure decay test (PDT) — direct integrity test"
+      yes_turbidity_lrc:
+        label: "Yes — continuous turbidity monitoring / particle counting (indirect)"
+      yes_both:
+        label: "Yes — both direct (PDT) and indirect testing"
+      not_yet_determined:
+        label: "Not yet determined"
+      no_mit:
+        label: "No — membrane integrity testing not planned"
+    short_label: "Membrane integrity testing:"
+
+  advanced_treatment:
+    label: "Does the project include advanced treatment beyond conventional filtration?"
+    help: "Advanced treatment steps for micropollutants, hardness, salinity, or emerging contaminants."
+    options:
+      nanofiltration:
+        label: "Nanofiltration (NF — 1–10 nm, softening and NOM removal)"
+      reverse_osmosis:
+        label: "Reverse osmosis (RO — < 1 nm, desalination / PFAS / micropollutant removal)"
+      activated_carbon_powder:
+        label: "Powdered activated carbon (PAC — batch dosing for taste/odour events)"
+      advanced_oxidation:
+        label: "Advanced oxidation process (AOP — O₃/H₂O₂ or UV/H₂O₂)"
+      ion_exchange:
+        label: "Ion exchange (IX — nitrates, arsenic, hardness, PFAS removal)"
+      biological_filtration:
+        label: "Biological activated carbon (BAC) / biofiltration"
+      none_advanced:
+        label: "No advanced treatment"
+    short_label: "Advanced treatment:"
+
+  nf_ro_purpose:
+    label: "What is the primary purpose of the NF / RO system?"
+    help: "Select all that apply."
+    options:
+      softening:
+        label: "Softening (hardness removal)"
+      nom_color_removal:
+        label: "Natural organic matter (NOM) / colour removal"
+      desalination:
+        label: "Desalination / TDS reduction"
+      pfas_removal:
+        label: "PFAS removal"
+      nitrate_removal:
+        label: "Nitrate removal"
+      micropollutant_removal:
+        label: "Micropollutant / pharmaceutical removal"
+      other_nf_ro:
+        label: "Other"
+    short_label: "NF/RO purpose:"
+
+  disinfection:
+    label: "What disinfection technology or technologies are used?"
+    help: "Select all disinfection steps — both primary disinfection and secondary (residual) disinfection."
+    options:
+      chlorine_gas:
+        label: "Chlorine gas (Cl₂)"
+      sodium_hypochlorite:
+        label: "Sodium hypochlorite (NaOCl — liquid bleach)"
+      calcium_hypochlorite:
+        label: "Calcium hypochlorite (Ca(OCl)₂ — solid / granular)"
+      chloramines:
+        label: "Chloramination (NH₂Cl — secondary residual, DBP reduction)"
+      chlorine_dioxide:
+        label: "Chlorine dioxide (ClO₂ — taste/odour control, THM reduction)"
+      ozone:
+        label: "Ozone (O₃ — primary disinfection, taste/odour, micropollutant control)"
+      uv_lpho:
+        label: "UV — Low-pressure high-output lamps (LPHO)"
+      uv_mp:
+        label: "UV — Medium-pressure lamps (MP — broad spectrum)"
+      uv_led:
+        label: "UV — LED (emerging technology)"
+      no_disinfection:
+        label: "No disinfection"
+    short_label: "Disinfection:"
+
+  dbp_concern:
+    label: "Is disinfection by-product (DBP) formation a known concern for this source?"
+    help: "DBPs (trihalomethanes / THMs, haloacetic acids / HAAs) form when chlorine reacts with natural organic matter. Regulatory limits apply in all North American jurisdictions."
+    options:
+      yes_high_nom:
+        label: "Yes — high NOM source (high DBP formation potential)"
+      yes_moderate:
+        label: "Yes — moderate concern"
+      no_low_risk:
+        label: "No — low NOM content, low DBP formation risk"
+      unknown_dbp:
+        label: "Unknown"
+    short_label: "DBP concern:"
+
+  ph_stabilization:
+    label: "Does the treatment train include pH adjustment or chemical stabilization?"
+    help: "Select all that apply."
+    options:
+      coagulation_ph_adjustment:
+        label: "pH adjustment for coagulation optimization (acid or base dosing)"
+      lime_softening:
+        label: "Lime softening (Ca(OH)₂ — hardness removal and pH adjustment)"
+      post_treatment_ph:
+        label: "Post-treatment pH correction (CO₂, lime, caustic soda / NaOH)"
+      corrosion_inhibitor:
+        label: "Corrosion inhibitor dosing (orthophosphate, silicate — distribution system protection)"
+      fluoridation:
+        label: "Fluoridation (NaF or H₂SiF₆ — public health program)"
+      none_ph:
+        label: "None"
+    short_label: "pH / stabilization:"
+
+  instrumentation_scada:
+    label: "What level of instrumentation and control is planned for the facility?"
+    options:
+      manual_basic:
+        label: "Manual / basic — local controls, limited automation"
+      semi_automated:
+        label: "Semi-automated — PLCs, local HMI, limited SCADA"
+      full_scada:
+        label: "Full SCADA — remote monitoring, automated control loops"
+      smart_plant:
+        label: "Smart plant / digital twin — advanced analytics, AI-assisted process control"
+    short_label: "Instrumentation / SCADA:"
+
+  distribution_system:
+    label: "Does this project include a distribution system or transmission main?"
+    options:
+      yes_full_distribution:
+        label: "Yes — full distribution network (pipes to end users)"
+      yes_transmission_only:
+        label: "Yes — transmission main only (bulk water transfer to another utility)"
+      plant_only:
+        label: "Plant only — water sold or transferred at the plant gate"
+      onsite_only:
+        label: "Onsite use only (industrial self-supply — no external distribution)"
+    short_label: "Distribution system:"
+
+  storage_type:
+    label: "What type of treated water storage is included?"
+    help: "Select all that apply."
+    options:
+      ground_reservoir:
+        label: "Ground-level reservoir / clearwell (contact time for disinfection)"
+      elevated_tank:
+        label: "Elevated storage tank / water tower"
+      underground_reservoir:
+        label: "Underground / buried reservoir"
+      pressure_tank:
+        label: "Pressure tank / hydropneumatic system (small systems)"
+      no_storage:
+        label: "No dedicated storage"
+    short_label: "Storage:"
+
+  regulatory_jurisdiction:
+    label: "What is the primary regulatory jurisdiction for this project?"
+    help: "Select all applicable jurisdictions. Subdomains are automatically derived from your source and use case selections above and do not need to be selected here."
+    options:
+      canada_federal:
+        label: "Canada — Federal (GCDWQ — Health Canada Guidelines for Canadian Drinking Water Quality)"
+      canada_quebec:
+        label: "Canada — Québec (RQEP — Règlement sur la qualité de l'eau potable, MELCCFP)"
+      canada_ontario:
+        label: "Canada — Ontario (SDWA — O. Reg. 170/03, Safe Drinking Water Act)"
+      canada_bc:
+        label: "Canada — British Columbia (Drinking Water Protection Act)"
+      canada_alberta:
+        label: "Canada — Alberta (Water Act / Environmental Protection and Enhancement Act)"
+      canada_other:
+        label: "Canada — Other province or territory"
+      usa_federal:
+        label: "USA — Federal (SDWA — EPA National Primary Drinking Water Regulations)"
+      usa_state:
+        label: "USA — State-level regulations (specify in notes below)"
+      other_jurisdiction:
+        label: "Other country / jurisdiction (specify in notes below)"
+    short_label: "Jurisdiction:"
+
+  project_free_description:
+    label: "Briefly describe anything important about the project."
+    help: "Optional but recommended."
+    placeholder: "Describe any aspect not covered by the previous questions: key water quality parameters, site constraints, technologies under consideration, specific pollutants of concern (PFAS, microplastics, heavy metals, pathogens), flow variability, regulatory history, or any other information relevant to regulatory identification."
+    short_label: "Project description:"
+
+intake_id: dwtp_intake_v3
+canonical_file: dwtp_intake_v3.canonical.yaml

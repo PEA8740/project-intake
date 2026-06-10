@@ -1,0 +1,702 @@
+# ============================================================================
+# AquaForge regAssist — DWTP Intake Questionnaire
+# Canonical schema — structure, conditions, writes_to, and ontology references
+# UI labels, help text, and placeholders belong in locale files
+#
+# Aligned with:
+#   project_intake.canonical.yaml v0.2.2 (id: convention, writes_to, ontology_refs)
+#   ontology_canonical.yaml v0.2.0 (use_cases, subdomains, regulated_media,
+#     activities, compliance_points, obligation_types)
+#
+# Version: 3.0
+# Date: 2026-06-09
+#
+# Changes from v2.0:
+#   - writes_to added to all questions
+#   - id: convention for options (replaces value:)
+#   - Capacity thresholds corrected (micro < 10, small 10-500, medium 500-10000)
+#   - water_families entry gate added (drinking_water locked)
+#   - drinking_water_subscopes added
+#   - downstream_drinking_water_intake added (Q9)
+#   - sensitive_zones added (Q10)
+#   - discharge_type excluded (conscious scope decision)
+#   - ontology_refs inline on options (aligned with canonical reference)
+# ============================================================================
+
+id: dwtp_intake_v3
+version: 0.3.0
+domain: water
+status: draft
+questionnaire_id: dwtp_intake_v3
+canonical_ontology_ref: ontology_canonical.yaml#v0.2.0
+project_intake_canonical_ref: project_intake.canonical.yaml#v0.2.2
+
+condition_operators:
+  - always
+  - any_selected
+  - all_selected
+  - none_selected
+  - equals
+  - not_equals
+
+question_types:
+  - multi_select
+  - radio
+  - text
+  - text_area
+
+# Canonical mapping — pipeline output contract
+# All IDs verbatim from ontology_canonical.yaml v0.2.0
+canonical_mapping:
+  use_cases:
+    primary: drinking_water_treatment
+    conditional:
+      - use_case: drinking_water_distribution
+        condition: "Q24 in [yes_full_distribution, yes_transmission_only]"
+      - use_case: source_water_intake
+        condition: "Q6 includes source_water_intake"
+      - use_case: water_abstraction_allocation
+        condition: "Q11 = new_permit_required"
+  subdomains:
+    always:
+      - drinking_water
+      - water_abstraction_allocation
+    conditional:
+      - subdomain: source_water_protection
+        condition: "Q8 in [yes_tier1, yes_tier2, yes_tier3] OR Q9 in [yes_confirmed, yes_suspected]"
+      - subdomain: surface_water
+        condition: "Q7 any_selected [river_stream, lake_reservoir, large_lake_system, ocean_coastal]"
+      - subdomain: groundwater
+        condition: "Q7 any_selected [confined_aquifer, unconfined_aquifer]"
+  regulated_media:
+    always:
+      - source_water
+      - raw_water
+      - treated_drinking_water
+    conditional:
+      - medium: distribution_water
+        condition: "Q24 in [yes_full_distribution, yes_transmission_only]"
+      - medium: tap_water
+        condition: "Q24 = yes_full_distribution"
+  activities:
+    always:
+      - abstraction
+      - treatment
+      - reporting
+      - recordkeeping
+    conditional:
+      - activity: design_sizing
+        condition: "Q2 in [feasibility_predesign, detailed_design]"
+      - activity: monitoring
+        condition: "Q23 != manual_basic"
+      - activity: storage
+        condition: "Q25 not includes no_storage"
+      - activity: permitting_approval
+        condition: "Q11 != existing_permit_valid"
+  compliance_points:
+    always:
+      - raw_water_intake
+      - treatment_plant_inlet
+      - post_treatment
+    conditional:
+      - point: entry_point_to_distribution
+        condition: "Q25 not includes no_storage"
+      - point: distribution_system
+        condition: "Q24 = yes_full_distribution"
+      - point: customer_tap
+        condition: "Q24 = yes_full_distribution"
+  obligation_types:
+    always:
+      - treatment
+      - design
+      - monitoring
+      - operational
+      - reporting
+
+questions:
+
+  # ─────────────────────────────────────────────
+  # STEP 1 — PROJECT CHARACTERIZATION
+  # ─────────────────────────────────────────────
+
+  - id: promoter_type
+    type: radio
+    required: true
+    writes_to: project.promoter_type
+    options:
+      - id: municipal
+      - id: industrial
+      - id: private_utility
+      - id: institutional
+      - id: federal_government
+      - id: real_estate_developer
+      - id: other
+
+  - id: industrial_sector
+    type: multi_select
+    required_if:
+      equals:
+        question: promoter_type
+        value: industrial
+    writes_to: project.industrial_sector
+    # Discovery/classification accelerator only — not an applicability axis
+    # per ontology-decisions.md
+    options:
+      - id: food_beverage
+      - id: chemical_pharma
+      - id: semiconductor_electronics
+      - id: mining_metals
+      - id: petroleum_refining
+      - id: power_generation
+      - id: other_industrial
+
+  - id: project_phase
+    type: radio
+    required: true
+    writes_to: project.phase
+    # maps to canonical activities: design_sizing, permitting_approval
+    options:
+      - id: feasibility_predesign
+      - id: detailed_design
+      - id: new_construction
+      - id: expansion
+      - id: retrofit_upgrade
+      - id: operation
+      - id: unknown
+
+  - id: project_capacity
+    type: radio
+    required: true
+    writes_to: project.capacity_range
+    # Thresholds corrected from v2.0 — aligned with project_intake_en-CA.yaml
+    # micro < 10 m³/day, small 10-500, medium 500-10000, large 10000-100000
+    options:
+      - id: micro
+      - id: small
+      - id: medium
+      - id: large
+      - id: very_large
+      - id: unknown
+
+  - id: project_nature
+    type: radio
+    required: true
+    writes_to: project.nature
+    options:
+      - id: new_greenfield
+      - id: new_brownfield
+      - id: upgrade_existing
+      - id: capacity_expansion
+      - id: emergency_interim
+
+  - id: water_families
+    type: multi_select
+    required: true
+    writes_to: classification.water_families
+    # Entry gate aligned with project_intake.canonical.yaml structure
+    # drinking_water pre-selected and locked in UI
+    options:
+      - id: drinking_water
+        ontology_refs:
+          subdomains:
+            - drinking_water
+            - source_water_protection
+      - id: other_unsure
+
+  - id: drinking_water_subscopes
+    type: multi_select
+    required_if:
+      any_selected:
+        question: water_families
+        values:
+          - drinking_water
+    writes_to: classification.drinking_water_subscopes
+    # drinking_water_treatment pre-selected and locked in UI
+    options:
+      - id: drinking_water_treatment
+        ontology_refs:
+          use_cases:
+            - drinking_water_treatment
+      - id: drinking_water_distribution
+        ontology_refs:
+          use_cases:
+            - drinking_water_distribution
+      - id: source_water_intake
+        ontology_refs:
+          use_cases:
+            - source_water_intake
+      - id: desalination
+
+  # ─────────────────────────────────────────────
+  # STEP 2 — RAW WATER SOURCE
+  # ─────────────────────────────────────────────
+
+  - id: water_source_type
+    type: multi_select
+    required: true
+    writes_to: project.water_source
+    # maps to canonical regulated_media: source_water + surface_water OR groundwater
+    # maps to canonical subdomains: surface_water OR groundwater (conditional)
+    options:
+      - id: river_stream
+        ontology_refs:
+          subdomains:
+            - surface_water
+      - id: lake_reservoir
+        ontology_refs:
+          subdomains:
+            - surface_water
+      - id: large_lake_system
+        ontology_refs:
+          subdomains:
+            - surface_water
+      - id: ocean_coastal
+        ontology_refs:
+          subdomains:
+            - surface_water
+            - marine_coastal_water
+      - id: confined_aquifer
+        ontology_refs:
+          subdomains:
+            - groundwater
+      - id: unconfined_aquifer
+        ontology_refs:
+          subdomains:
+            - groundwater
+      - id: rainwater_harvesting
+      - id: municipal_supply
+
+  - id: source_protection_zone
+    type: radio
+    required: true
+    writes_to: project.source_protection_zone
+    # maps to canonical subdomain: source_water_protection (if yes_tier*)
+    # maps to canonical compliance_point: raw_water_intake
+    options:
+      - id: yes_tier1
+        ontology_refs:
+          subdomains:
+            - source_water_protection
+      - id: yes_tier2
+        ontology_refs:
+          subdomains:
+            - source_water_protection
+      - id: yes_tier3
+        ontology_refs:
+          subdomains:
+            - source_water_protection
+      - id: no_designated
+      - id: unknown
+
+  - id: downstream_drinking_water_intake
+    type: radio
+    required_if:
+      any_selected:
+        question: water_source_type
+        values:
+          - river_stream
+          - lake_reservoir
+          - large_lake_system
+          - ocean_coastal
+          - confined_aquifer
+          - unconfined_aquifer
+    writes_to: project.receiving_environment.downstream_intake
+    # Added in v3.0 — present in project_intake.canonical.yaml
+    # triggers source_water_protection subdomain
+    options:
+      - id: yes_confirmed
+        ontology_refs:
+          subdomains:
+            - source_water_protection
+      - id: yes_suspected
+      - id: 'false'
+      - id: unknown
+
+  - id: sensitive_zones
+    type: multi_select
+    required: false
+    writes_to: project.sensitive_zones
+    # Added in v3.0 — present in project_intake.canonical.yaml
+    # applies to raw water abstraction and intake location
+    options:
+      - id: drinking_water_source_protection_area
+        ontology_refs:
+          subdomains:
+            - source_water_protection
+      - id: protected_biodiversity_habitat
+      - id: fish_aquatic_habitat
+      - id: wetland_protected
+      - id: drinking_water_watershed
+        ontology_refs:
+          subdomains:
+            - source_water_protection
+      - id: floodplain_flood_risk_zone
+      - id: transboundary_shared_water_body
+      - id: indigenous_traditional_territory
+      - id: none_identified
+      - id: unknown
+
+  - id: abstraction_permit_status
+    type: radio
+    required: true
+    writes_to: project.abstraction_permit_status
+    # maps to canonical activities: abstraction, permitting_approval
+    # triggers use_case: water_abstraction_allocation if new_permit_required
+    options:
+      - id: existing_permit_valid
+      - id: existing_permit_amendment
+      - id: new_permit_required
+        ontology_refs:
+          use_cases:
+            - water_abstraction_allocation
+      - id: permit_not_required
+      - id: unknown_permit
+
+  - id: source_regime
+    type: radio
+    required_if:
+      any_selected:
+        question: water_source_type
+        values:
+          - river_stream
+          - lake_reservoir
+          - large_lake_system
+    writes_to: project.source_regime
+    options:
+      - id: perennial
+      - id: seasonal_intermittent
+      - id: regulated_controlled
+      - id: tidal_influenced
+
+  # ─────────────────────────────────────────────
+  # STEP 3 — RAW WATER QUALITY
+  # ─────────────────────────────────────────────
+
+  - id: turbidity_range
+    type: radio
+    required: true
+    writes_to: project.raw_water.turbidity_range
+    # maps to canonical compliance_points: raw_water_intake, treatment_plant_inlet
+    # maps to canonical obligation_types: design, treatment
+    options:
+      - id: very_low
+      - id: low
+      - id: moderate
+      - id: high
+      - id: very_high
+      - id: highly_variable
+      - id: unknown_turbidity
+
+  - id: microbial_risk
+    type: radio
+    required: true
+    writes_to: project.raw_water.microbial_risk
+    # maps to canonical obligation_types: treatment, monitoring
+    options:
+      - id: low
+      - id: moderate
+      - id: high
+      - id: very_high
+      - id: unknown_microbial
+
+  - id: chemical_concerns
+    type: multi_select
+    required: false
+    writes_to: project.raw_water.chemical_concerns
+    options:
+      - id: high_nom
+      - id: hardness_scaling
+      - id: iron_manganese
+      - id: arsenic
+      - id: nitrates
+      - id: fluoride
+      - id: pfas
+      - id: taste_odour
+      - id: heavy_metals
+      - id: pesticides_herbicides
+      - id: pharmaceuticals
+      - id: salinity_tds
+      - id: none_known_chem
+
+  - id: source_variability
+    type: radio
+    required: true
+    writes_to: project.raw_water.variability
+    options:
+      - id: stable
+      - id: seasonal
+      - id: event_driven
+      - id: highly_variable
+
+  # ─────────────────────────────────────────────
+  # STEP 4 — TREATMENT TRAIN
+  # ─────────────────────────────────────────────
+
+  - id: pre_treatment
+    type: multi_select
+    required: false
+    writes_to: classification.treatment_train.pre_treatment
+    options:
+      - id: screening_grit
+      - id: pre_sedimentation
+      - id: pre_chlorination
+      - id: pre_ozonation
+      - id: aeration
+      - id: bank_filtration
+      - id: none_pretreatment
+
+  - id: coagulation_flocculation
+    type: radio
+    required: true
+    writes_to: classification.treatment_train.coagulation_flocculation
+    options:
+      - id: yes_conventional
+      - id: yes_dissolved_air
+      - id: yes_ballasted
+      - id: no_coagulation
+
+  - id: coagulant_type
+    type: radio
+    required_if:
+      any_selected:
+        question: coagulation_flocculation
+        values:
+          - yes_conventional
+          - yes_dissolved_air
+          - yes_ballasted
+    writes_to: classification.treatment_train.coagulant_type
+    options:
+      - id: alum
+      - id: pac
+      - id: ferric_chloride
+      - id: ferric_sulfate
+      - id: combined_coagulants
+      - id: other_coagulant
+
+  - id: sedimentation_type
+    type: radio
+    required: false
+    required_if:
+      any_selected:
+        question: coagulation_flocculation
+        values:
+          - yes_conventional
+          - yes_ballasted
+    writes_to: classification.treatment_train.sedimentation_type
+    options:
+      - id: conventional_basin
+      - id: lamella_settler
+      - id: sludge_blanket
+      - id: other_sedimentation
+
+  - id: filtration
+    type: multi_select
+    required: true
+    writes_to: classification.treatment_train.filtration
+    # maps to canonical activity: treatment
+    # maps to canonical compliance_point: post_treatment
+    # BUG-01: no_filtration mutually exclusive with all technology options
+    mutual_exclusion:
+      exclusive_id: no_filtration
+      exclusive_with_all_others: true
+    classification_output:
+      technologies_field: filtration_technologies
+      no_filtration_flag: no_filtration_flag
+    options:
+      - id: rapid_sand_filter
+      - id: dual_media_filter
+      - id: slow_sand_filter
+      - id: gac_filter
+      - id: pressure_filter
+      - id: ultrafiltration
+      - id: microfiltration
+      - id: no_filtration
+
+  - id: membrane_module_config
+    type: radio
+    required_if:
+      any_selected:
+        question: filtration
+        values:
+          - ultrafiltration
+          - microfiltration
+    writes_to: classification.treatment_train.membrane_module_config
+    options:
+      - id: hollow_fiber
+      - id: spiral_wound
+      - id: ceramic
+      - id: other_membrane_config
+
+  - id: membrane_integrity_testing
+    type: radio
+    required_if:
+      any_selected:
+        question: filtration
+        values:
+          - ultrafiltration
+          - microfiltration
+    writes_to: classification.treatment_train.membrane_integrity_testing
+    # maps to canonical obligation_types: monitoring, operational
+    options:
+      - id: yes_pressure_decay
+      - id: yes_turbidity_lrc
+      - id: yes_both
+      - id: not_yet_determined
+      - id: no_mit
+
+  - id: advanced_treatment
+    type: multi_select
+    required: false
+    writes_to: classification.treatment_train.advanced_treatment
+    options:
+      - id: nanofiltration
+      - id: reverse_osmosis
+      - id: activated_carbon_powder
+      - id: advanced_oxidation
+      - id: ion_exchange
+      - id: biological_filtration
+      - id: none_advanced
+
+  - id: nf_ro_purpose
+    type: multi_select
+    required_if:
+      any_selected:
+        question: advanced_treatment
+        values:
+          - nanofiltration
+          - reverse_osmosis
+    writes_to: classification.treatment_train.nf_ro_purpose
+    options:
+      - id: softening
+      - id: nom_color_removal
+      - id: desalination
+      - id: pfas_removal
+      - id: nitrate_removal
+      - id: micropollutant_removal
+      - id: other_nf_ro
+
+  - id: disinfection
+    type: multi_select
+    required: true
+    writes_to: classification.treatment_train.disinfection
+    # maps to canonical compliance_points: post_treatment, entry_point_to_distribution
+    # maps to canonical obligation_types: treatment, operational, monitoring
+    options:
+      - id: chlorine_gas
+      - id: sodium_hypochlorite
+      - id: calcium_hypochlorite
+      - id: chloramines
+      - id: chlorine_dioxide
+      - id: ozone
+      - id: uv_lpho
+      - id: uv_mp
+      - id: uv_led
+      - id: no_disinfection
+
+  - id: dbp_concern
+    type: radio
+    required_if:
+      any_selected:
+        question: disinfection
+        values:
+          - chlorine_gas
+          - sodium_hypochlorite
+          - calcium_hypochlorite
+          - chloramines
+          - chlorine_dioxide
+    writes_to: classification.treatment_train.dbp_concern
+    # maps to canonical obligation_types: monitoring, treatment
+    options:
+      - id: yes_high_nom
+      - id: yes_moderate
+      - id: no_low_risk
+      - id: unknown_dbp
+
+  - id: ph_stabilization
+    type: multi_select
+    required: false
+    writes_to: classification.treatment_train.ph_stabilization
+    options:
+      - id: coagulation_ph_adjustment
+      - id: lime_softening
+      - id: post_treatment_ph
+      - id: corrosion_inhibitor
+      - id: fluoridation
+      - id: none_ph
+
+  - id: instrumentation_scada
+    type: radio
+    required: true
+    writes_to: classification.treatment_train.instrumentation_scada
+    # maps to canonical activities: monitoring, operation_maintenance
+    options:
+      - id: manual_basic
+      - id: semi_automated
+      - id: full_scada
+      - id: smart_plant
+
+  # ─────────────────────────────────────────────
+  # STEP 5 — REGULATORY & PIPELINE OUTPUT
+  # ─────────────────────────────────────────────
+
+  - id: distribution_system
+    type: radio
+    required: true
+    writes_to: classification.distribution_system
+    # maps to canonical use_case: drinking_water_distribution (if yes_*)
+    # maps to canonical compliance_points: distribution_system, customer_tap (if yes_full)
+    # maps to canonical regulated_media: distribution_water, tap_water (if yes_*)
+    options:
+      - id: yes_full_distribution
+        ontology_refs:
+          use_cases:
+            - drinking_water_distribution
+          regulated_media:
+            - distribution_water
+            - tap_water
+          compliance_points:
+            - distribution_system
+            - customer_tap
+      - id: yes_transmission_only
+        ontology_refs:
+          use_cases:
+            - drinking_water_distribution
+          regulated_media:
+            - distribution_water
+      - id: plant_only
+      - id: onsite_only
+
+  - id: storage_type
+    type: multi_select
+    required: false
+    writes_to: classification.storage_type
+    # maps to canonical activity: storage
+    # maps to canonical compliance_point: entry_point_to_distribution
+    options:
+      - id: ground_reservoir
+      - id: elevated_tank
+      - id: underground_reservoir
+      - id: pressure_tank
+      - id: no_storage
+
+  - id: regulatory_jurisdiction
+    type: multi_select
+    required: true
+    writes_to: project.regulatory_jurisdiction
+    # feeds: jurisdiction_discovery pipeline stage
+    # subdomains are auto-derived from water_source_type, source_protection_zone, downstream_drinking_water_intake
+    options:
+      - id: canada_federal
+      - id: canada_quebec
+      - id: canada_ontario
+      - id: canada_bc
+      - id: canada_alberta
+      - id: canada_other
+      - id: usa_federal
+      - id: usa_state
+      - id: other_jurisdiction
+
+  - id: project_free_description
+    type: text_area
+    required: false
+    writes_to: project.description
