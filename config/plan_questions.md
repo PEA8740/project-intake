@@ -1,5 +1,5 @@
 # plan_questions.md — AquaForge regAssist Intake Questionnaire v2.1
-# Corrected version — Full audit pass (BUG-01 to BUG-14)
+# Corrected version — Full audit pass (BUG-01 to BUG-26)
 # Ref: audit_questionnaire_v2.md
 
 ## Changelog v2.0 → v2.1
@@ -20,6 +20,17 @@
 #          required: true → required: false (conditional); new option not_applicable_supply_only
 # BUG-14: Q17 water_streams + Q18 project_activities — treatment-plant streams/activities
 #          hidden for distribution-only DW projects (hasDWTreatment flag)
+# BUG-15 to BUG-26 (v2.1.5 proactive audit):
+#   BUG-15: Q18 pretreatment — now explicitly filtered (was return true)
+#   BUG-16: Q18 treatment — now explicitly filtered (was return true)
+#   BUG-17: Q17 raw_water — now shown for groundwater-only projects (add hasGW)
+#   BUG-18: Q17 treated_wastewater_effluent — now shown for indirect discharge (add hasIndirect)
+#   BUG-19: Q14 receiving_environment_type — now triggered by land_application
+#   BUG-20: Q16 sensitive_zones — now triggered for distribution-only + reuse_on_site
+#   BUG-21: Q18 water_abstraction_withdrawal — hidden for no_raw_water_abstraction projects
+#   BUG-23: Q15 downstream_intake — now triggered by land_application
+#   BUG-25: Q17 stormwater_site_runoff — now shown for DWTP projects (hasDWTreatment)
+#   BUG-26: Q17 leachate — now shown for land_application projects
 
 ---
 

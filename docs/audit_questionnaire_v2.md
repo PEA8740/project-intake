@@ -306,6 +306,16 @@ distribution network or other utility"
 | BUG-12-C | STEP 3 subscopes in fixed schema order instead of selection order | MEDIUM | P3 |
 | BUG-13 | Q13 discharge_type hard block for distribution-only DW projects | HIGH | P1 |
 | BUG-14 | Q17/Q18 treatment-plant streams shown for distribution-only DW | MEDIUM | P2 |
+| BUG-15 | Q18 pretreatment always shown (distribution-only DW, GW-only, SW-only) | MEDIUM | P2 |
+| BUG-16 | Q18 treatment always shown (stormwater-only, groundwater-only) | MEDIUM | P2 |
+| BUG-17 | Q17 raw_water hidden for groundwater-only projects | HIGH | P2 |
+| BUG-18 | Q17 treated_wastewater_effluent hidden for indirect discharge projects | HIGH | P1 |
+| BUG-19 | Q14 receiving_environment not triggered by land_application | MEDIUM | P2 |
+| BUG-20 | Q16 sensitive_zones not triggered for distribution-only / reuse | MEDIUM | P2 |
+| BUG-21 | Q18 water_abstraction shown for no-intake projects (WWTP, reuse, biosolids) | MEDIUM | P2 |
+| BUG-23 | Q15 downstream_intake not triggered by land_application | MEDIUM | P2 |
+| BUG-25 | Q17 stormwater_site_runoff hidden for DWTP projects | LOW | P3 |
+| BUG-26 | Q17 leachate hidden for land_application projects | MEDIUM | P2 |
 
 ### Correction roadmap
 

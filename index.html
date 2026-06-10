@@ -92,7 +92,7 @@ textarea:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95
   <span class="loc-pill" id="coordPill">📍 43.6535, -79.3839</span>
   <button class="btn-confirm" id="btnConfirmLoc" onclick="confirmLocation()">✓ Confirm location</button>
   <span class="loc-status unconfirmed" id="locStatus">⚠ Location not confirmed</span>
-  <span class="version-badge">v2.1.4</span>
+  <span class="version-badge">v2.1.5</span>
 </div>
 
 <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
@@ -390,7 +390,7 @@ const SCHEMA={questions:[
   ]},
 
   {id:"receiving_environment_type",type:"multi_select",
-   required_if:{any_selected:{question:"discharge_type",values:["direct_surface_water","direct_groundwater"]}},
+   required_if:{any_selected:{question:"discharge_type",values:["direct_surface_water","direct_groundwater","land_application"]}},
    step:"Step 4 — Source & Receiving Env.",writes_to:"project.receiving_environment.type",
    label:"What is the nature of the receiving environment?",
    help:"Select all receiving environments that will receive discharge from this project.",
@@ -406,9 +406,9 @@ const SCHEMA={questions:[
     {id:"auto_detected",label:"Auto-detected from GPS coordinates (see map — requires confirmation)"}
   ]},
 
-  // BUG-05: extended to indirect discharge types; label is dynamic
+  // BUG-05: extended to indirect discharge types; BUG-23: extended to land_application
   {id:"downstream_drinking_water_intake",type:"radio",
-   required_if:{any_selected:{question:"discharge_type",values:["direct_surface_water","indirect_sanitary_sewer","indirect_storm_sewer"]}},
+   required_if:{any_selected:{question:"discharge_type",values:["direct_surface_water","indirect_sanitary_sewer","indirect_storm_sewer","land_application"]}},
    step:"Step 4 — Source & Receiving Env.",writes_to:"project.receiving_environment.downstream_intake",
    label:"Is there a downstream drinking water intake affected by this project's discharge?",
    label_direct:"Is there a drinking water intake downstream of the discharge point?",
@@ -421,9 +421,9 @@ const SCHEMA={questions:[
     {id:"unknown",label:"Unknown"}
   ]},
 
-  // BUG-07: conditional on external discharge pathway
+  // BUG-07: conditional on external discharge; BUG-20: extended to cover distribution-only + reuse
   {id:"sensitive_zones",type:"multi_select",
-   required_if:{any_selected:{question:"discharge_type",values:["direct_surface_water","direct_groundwater","indirect_sanitary_sewer","indirect_storm_sewer","land_application","hauled_offsite_treatment"]}},
+   required_if:{any_selected:{question:"discharge_type",values:["direct_surface_water","direct_groundwater","indirect_sanitary_sewer","indirect_storm_sewer","land_application","hauled_offsite_treatment","not_applicable_supply_only","reuse_on_site"]}},
    step:"Step 4 — Source & Receiving Env.",writes_to:"project.sensitive_zones",
    label:"Are any protected or environmentally sensitive zones affected by this project?",
    help:"Select all that apply. Automatic detection from GPS coordinates is performed in the background. Optional for fully closed-loop or pure on-site reuse projects.",
@@ -660,7 +660,8 @@ function getFilteredOptions(q){
   if(q.id==='water_streams'){
     const filtered=q.options.filter(o=>{
       switch(o.id){
-        case'raw_water':              return hasDW||(hasIWW&&!onMunOnly);
+        // BUG-17: add hasGW — raw groundwater exists in remediation/injection projects
+        case'raw_water':              return hasDW||(hasIWW&&!onMunOnly)||(hasGW&&!onMunOnly);
         case'raw_wastewater':         return hasMWW||hasIWW;
         case'industrial_process_water':return hasIWW;
         // BUG-14: treatment-plant streams hidden for distribution-only DW projects
@@ -670,12 +671,15 @@ function getFilteredOptions(q){
         case'disinfection_byproduct_streams':return (hasDW&&hasDWTreatment)||hasMWW;
         case'cooling_water':          return hasIWW;
         case'treated_drinking_water': return hasDW;
-        case'treated_wastewater_effluent':return (hasMWW||hasIWW)&&(hasDirect||hasReuse||hasLand||hasReuseDis);
+        // BUG-18: add hasIndirect — pretreated effluent exists for indirect discharge projects
+        case'treated_wastewater_effluent':return (hasMWW||hasIWW)&&(hasDirect||hasIndirect||hasReuse||hasLand||hasReuseDis);
         // BUG-14: sludge/spent media only for treatment plants, not distribution-only
         case'sludge_biosolids':       return (hasDW&&hasDWTreatment)||hasMWW||hasIWW||hasResid;
         case'spent_filter_media_resin':return (hasDW&&hasDWTreatment)||hasMWW||hasIWW;
-        case'stormwater_site_runoff': return hasSW||hasIWW||hasMWW;
-        case'leachate':               return hasResid||hasIWW||(hasMWW&&hasGW);
+        // BUG-25: add DWTP — large treatment plants generate significant site runoff
+        case'stormwater_site_runoff': return hasSW||hasIWW||hasMWW||(hasDW&&hasDWTreatment);
+        // BUG-26: add hasLand — land application (septic, biosolids) generates leachate risk
+        case'leachate':               return hasResid||hasIWW||(hasMWW&&(hasGW||hasLand))||hasLand;
         default:return true;
       }
     });
@@ -689,7 +693,8 @@ function getFilteredOptions(q){
   if(q.id==='project_activities'){
     return q.options.filter(o=>{
       switch(o.id){
-        case'water_abstraction_withdrawal':return !onMunOnly;
+        // BUG-21: exclude when no_raw_water_abstraction selected (WWTP, reuse, biosolids)
+        case'water_abstraction_withdrawal':return !onMunOnly&&!source.includes('no_raw_water_abstraction');
         case'collection_conveyance':       return isNetOp;
         // BUG-03
         case'direct_environmental_discharge':return hasDirect||hasLand;
@@ -697,6 +702,14 @@ function getFilteredOptions(q){
         case'reuse':                       return hasReuse||hasReuseDis;
         case'residuals_management':        return hasMWW||(hasDW&&hasDWTreatment)||hasIWW||hasResid;
         case'advanced_treatment':          return (hasDW&&hasDWTreatment)||hasMWW||hasReuse||hasIWW;
+        // BUG-15: pretreatment hidden for distribution-only DW, GW-only, stormwater-only
+        case'pretreatment':                return hasMWW||(hasDW&&hasDWTreatment)||hasIWW||hasReuse||hasResid||hasSW;
+        // BUG-16: treatment hidden for stormwater-only, groundwater-only,
+        // and distribution-only DW (no treatment plant in scope)
+        case'treatment':{
+          const hasOnlyDist=hasDW&&dwSub.length>0&&dwSub.every(s=>s==='drinking_water_distribution');
+          return (hasDW&&!hasOnlyDist)||hasMWW||hasIWW||hasReuse||hasResid;
+        }
         default:return true;
       }
     });

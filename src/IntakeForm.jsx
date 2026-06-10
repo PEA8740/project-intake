@@ -201,8 +201,9 @@ function getFilteredOptions(question, answers) {
   if (qId === "water_streams") {
     const filtered = options.filter(({ id: optId }) => {
       switch (optId) {
+        // BUG-17: add hasGW — raw groundwater exists in remediation/injection projects
         case "raw_water":
-          return hasDW || (hasIWW && !onMunicipalSupplyOnly);
+          return hasDW || (hasIWW && !onMunicipalSupplyOnly) || (hasGW && !onMunicipalSupplyOnly);
 
         case "raw_wastewater":
           return hasMWW || hasIWW;
@@ -229,9 +230,10 @@ function getFilteredOptions(question, answers) {
         case "treated_drinking_water":
           return hasDW;
 
+        // BUG-18: add hasIndirect — pretreated effluent exists for indirect discharge projects
         case "treated_wastewater_effluent":
           return (hasMWW || hasIWW) &&
-                 (hasDirect || hasReuse || hasLand || hasReuseDis);
+                 (hasDirect || hasIndirect || hasReuse || hasLand || hasReuseDis);
 
         // BUG-14: restricted to treatment-plant DW projects
         case "sludge_biosolids":
@@ -240,11 +242,13 @@ function getFilteredOptions(question, answers) {
         case "spent_filter_media_resin":
           return (hasDW && hasDWTreatment) || hasMWW || hasIWW;
 
+        // BUG-25: add DWTP — large treatment plants generate significant site runoff
         case "stormwater_site_runoff":
-          return hasSW || hasIWW || hasMWW;
+          return hasSW || hasIWW || hasMWW || (hasDW && hasDWTreatment);
 
+        // BUG-26: add hasLand — land application generates leachate risk
         case "leachate":
-          return hasResid || hasIWW || (hasMWW && hasGW);
+          return hasResid || hasIWW || (hasMWW && (hasGW || hasLand)) || hasLand;
 
         default:
           return true;
@@ -271,8 +275,10 @@ function getFilteredOptions(question, answers) {
     return options.filter(({ id: optId }) => {
       switch (optId) {
         // BUG-02: hide abstraction if facility is on municipal supply only
+        // BUG-21: exclude when no_raw_water_abstraction selected
         case "water_abstraction_withdrawal":
-          return !onMunicipalSupplyOnly;
+          return !onMunicipalSupplyOnly &&
+                 !source.includes("no_raw_water_abstraction");
 
         case "pretreatment":
           return true; // always shown
@@ -283,6 +289,18 @@ function getFilteredOptions(question, answers) {
         case "advanced_treatment":
           // BUG-14: hidden for distribution-only DW projects
           return (hasDW && hasDWTreatment) || hasMWW || hasReuse || hasIWW;
+
+        // BUG-15: pretreatment hidden for distribution-only DW, GW-only
+        case "pretreatment":
+          return hasMWW || (hasDW && hasDWTreatment) || hasIWW || hasReuse || hasResid || hasSW;
+
+        // BUG-16: treatment hidden for stormwater-only, groundwater-only,
+        // and distribution-only DW (no treatment plant in scope)
+        case "treatment": {
+          const hasOnlyDist = hasDW && dwSubscopesFull.length > 0 &&
+            dwSubscopesFull.every((s) => s === "drinking_water_distribution");
+          return (hasDW && !hasOnlyDist) || hasMWW || hasIWW || hasReuse || hasResid;
+        }
 
         case "storage":
           return true; // always shown

@@ -5,15 +5,17 @@
 # ============================================================================
 #
 # id:      water_project_intake_v2
-# version: 0.2.4
+# version: 0.2.5
 # Changelog v2.1.2 → v2.1.3:
 #   BUG-13: discharge_type — hard block for distribution-only DW projects
 # Changelog v2.1.3 → v2.1.4:
-#   BUG-14: water_streams + project_activities — treatment-plant streams hidden
+#   BUG-14: hasDWTreatment flag — treatment-plant streams hidden for distribution-only DW
+# Changelog v2.1.4 → v2.1.5 (proactive full audit — 10 bugs):
+#   BUG-15 to BUG-26: getFilteredOptions + schema triggers — see audit_questionnaire_v2.md
 #           for distribution-only DW projects (hasDWTreatment flag)
 
 id: water_project_intake_v2
-version: 0.2.4
+version: 0.2.5
 domain: water
 status: draft
 
@@ -505,10 +507,11 @@ questions:
 
   - id: receiving_environment_type
     type: multi_select
+    # BUG-19: extended to include land_application (soil/aquifer is the receiving env)
     required_if:
       any_selected:
         question: discharge_type
-        values: [direct_surface_water, direct_groundwater]
+        values: [direct_surface_water, direct_groundwater, land_application]
     writes_to: project.receiving_environment.type
     options:
       - id: perennial_river_stream
@@ -538,13 +541,14 @@ questions:
       - id: auto_detected
 
   # BUG-05: required_if extended to include indirect discharge types
+  # BUG-23: extended to include land_application (leachate may reach DW intake)
   - id: downstream_drinking_water_intake
     type: radio
     required_if:
       any_selected:
         question: discharge_type
         values: [direct_surface_water, indirect_sanitary_sewer,
-                 indirect_storm_sewer]
+                 indirect_storm_sewer, land_application]
     writes_to: project.receiving_environment.downstream_intake
     # NOTE: locale labels must distinguish between:
     # - direct discharge: "Is there a DW intake downstream of the discharge point?"
@@ -561,6 +565,7 @@ questions:
       - id: unknown
 
   # BUG-07: now conditional — required only when external discharge pathway exists
+  # BUG-20: extended to not_applicable_supply_only and reuse_on_site
   - id: sensitive_zones
     type: multi_select
     required_if:
@@ -568,9 +573,8 @@ questions:
         question: discharge_type
         values: [direct_surface_water, direct_groundwater,
                  indirect_sanitary_sewer, indirect_storm_sewer,
-                 land_application, hauled_offsite_treatment]
-    # required: false when discharge_type = reuse_on_site or
-    # no_discharge_closed_loop only
+                 land_application, hauled_offsite_treatment,
+                 not_applicable_supply_only, reuse_on_site]
     writes_to: project.sensitive_zones
     options:
       - id: drinking_water_source_protection_area
