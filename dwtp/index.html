@@ -105,6 +105,24 @@
     .map-pin-info strong{color:var(--primary)}
     .btn-confirm-loc{background:var(--success);color:#fff;border:none;padding:10px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;width:100%;margin-top:4px}
     .btn-confirm-loc:disabled{background:#aaa;cursor:default}
+    /* MOBILE RESPONSIVE */
+    @media (max-width:600px){
+      h1{font-size:17px}
+      .cbody{padding:14px}
+      .rk{min-width:130px}
+      .map-search{flex-wrap:wrap}
+      .map-search input{min-width:0;width:100%}
+      .map-search button{width:100%}
+      #map{height:260px}
+      .slab{font-size:8px;padding:5px 2px}
+      .po{padding:10px}
+      .rrow{flex-direction:column;gap:4px}
+      .rk{min-width:unset;color:var(--accent);font-size:11px;font-weight:600;text-transform:uppercase}
+    }
+    @media (min-width:601px) and (max-width:900px){
+      .rk{min-width:160px}
+      #map{height:300px}
+    }
   </style>
 </head>
 <body>
