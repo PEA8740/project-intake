@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>AquaForge regAssist — DWTP Intake v3</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
   <style>
     :root{--primary:#0a3d62;--accent:#2980b9;--accent-h:#1a6fa8;--success:#1e8449;--warn:#d35400;--bg:#f4f7fb;--card:#fff;--border:#d5e0ee;--text:#1a2332;--muted:#5d7087;--tag:#e8f0fa;--canon:#e8f5e9;--canon-t:#1b5e20;--r:10px;--sh:0 2px 12px rgba(10,61,98,.08)}
     *{box-sizing:border-box;margin:0;padding:0}
@@ -91,6 +92,19 @@
     .cs{background:#e8f0fa;border:1px solid #c5d8ee;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:600;color:var(--primary)}
     .ca{color:var(--muted);font-size:14px}
     .btn-re2{background:var(--accent);color:#fff;border:none;padding:10px 22px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin-top:16px}
+    /* MAP */
+    .map-wrap{border-radius:8px;overflow:hidden;border:2px solid var(--border);margin-bottom:14px;position:relative}
+    #map{height:340px;width:100%;z-index:1}
+    .map-search{display:flex;gap:8px;margin-bottom:10px}
+    .map-search input{flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit}
+    .map-search input:focus{outline:none;border-color:var(--accent)}
+    .map-search button{background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+    .map-hint{font-size:12px;color:var(--muted);margin-bottom:10px}
+    .map-pin-info{background:#f0f5fb;border:1px solid var(--border);border-radius:7px;padding:10px 14px;font-size:13px;margin-bottom:10px;display:none}
+    .map-pin-info.vis{display:block}
+    .map-pin-info strong{color:var(--primary)}
+    .btn-confirm-loc{background:var(--success);color:#fff;border:none;padding:10px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;width:100%;margin-top:4px}
+    .btn-confirm-loc:disabled{background:#aaa;cursor:default}
   </style>
 </head>
 <body>
@@ -308,6 +322,8 @@ function rStep(){
   document.getElementById('rp').style.display='none';
   document.getElementById('fc').style.display='block';
   rNavBtns();
+  // init Leaflet map after DOM is ready
+  if(step===0&&!locOk){setTimeout(initMap,50);}
   // pre-select locked options
   ['water_families','drinking_water_subscopes'].forEach(qid=>{
     const qo=STEPS.flatMap(s=>s.questions).find(q=>q.id===qid);
@@ -327,8 +343,23 @@ function rStep(){
 function rLoc(){
   if(locOk)return`<div class="card"><div class="ch"><div class="cnum">Step 1 of ${STEPS.length}</div><div class="ctitle">Project Location</div><div class="cdesc">Coordinates feed regAssist jurisdiction discovery.</div></div>
   <div class="cbody"><div class="loc-ok"><span class="lck">✅</span><div class="li2"><strong>Location confirmed</strong><br><span class="lco">Lat:${locD.lat.toFixed(5)}, Lng:${locD.lng.toFixed(5)}</span>${locD.hint?`<br><span style="font-size:12px;color:var(--muted)">${locD.hint}</span>`:''}</div><button class="btn-re" onclick="resetLoc()">Change</button></div></div></div>`;
-  return`<div class="card"><div class="ch"><div class="cnum">Step 1 of ${STEPS.length}</div><div class="ctitle">Project Location</div><div class="cdesc">Locate your project. Coordinates feed regAssist jurisdiction discovery.</div></div>
-  <div class="cbody"><div class="loc-ph"><div class="li">📍</div><p>Click below to confirm the project location.<br><em style="font-size:11px;color:#aab">(In production: interactive map with address search)</em></p><button class="btn-loc" onclick="simLoc()">📍 Confirm Project Location</button></div></div></div>`;
+  return`<div class="card"><div class="ch"><div class="cnum">Step 1 of ${STEPS.length}</div>
+    <div class="ctitle">Project Location</div>
+    <div class="cdesc">Click on the map or search by city name to locate the project site. Confirm before proceeding.</div>
+  </div>
+  <div class="cbody">
+    <div class="map-search">
+      <input type="text" id="mapSearch" placeholder="Search city, address or coordinates…" onkeydown="if(event.key==='Enter')searchLoc()"/>
+      <button onclick="searchLoc()">🔍 Search</button>
+    </div>
+    <p class="map-hint">Or click directly on the map to drop a pin at the project location.</p>
+    <div class="map-wrap"><div id="map"></div></div>
+    <div class="map-pin-info" id="pinInfo">
+      📍 <strong id="pinCoords"></strong><br>
+      <span id="pinAddress" style="color:var(--muted);font-size:12px">Resolving address…</span>
+    </div>
+    <button class="btn-confirm-loc" id="btnConfirmLoc" onclick="confirmLoc()" disabled>✓ Confirm this location</button>
+  </div></div>`;
 }
 
 function rQ(){
@@ -402,9 +433,120 @@ function updVis(){
   });
 }
 
-// ── LOCATION ─────────────────────────────────────────────────
-function simLoc(){locD={lat:45.4042,lng:-71.8929,hint:'Sherbrooke, Québec, Canada (demo)'};locOk=true;ans['location_gps']=locD;rStep();}
-function resetLoc(){locOk=false;locD={lat:null,lng:null,hint:''};delete ans['location_gps'];rStep();}
+// ── LOCATION — Leaflet interactive map ───────────────────────
+let _map=null,_marker=null,_pendingLat=null,_pendingLng=null;
+
+function rLoc(){
+  if(locOk){
+    return`<div class="card"><div class="ch"><div class="cnum">Step 1 of ${STEPS.length}</div><div class="ctitle">Project Location</div><div class="cdesc">Coordinates feed regAssist jurisdiction discovery.</div></div>
+    <div class="cbody">
+      <div class="loc-ok"><span class="lck">✅</span>
+        <div class="li2"><strong>Location confirmed</strong><br>
+        <span class="lco">Lat: ${locD.lat.toFixed(5)}, Lng: ${locD.lng.toFixed(5)}</span>
+        ${locD.hint?`<br><span style="font-size:12px;color:var(--muted)">${locD.hint}</span>`:''}
+        ${locD.address?`<br><span style="font-size:12px;color:var(--text)">${locD.address}</span>`:''}
+        </div>
+        <button class="btn-re" onclick="resetLoc()">Change</button>
+      </div>
+    </div></div>`;
+  }
+  return`<div class="card"><div class="ch"><div class="cnum">Step 1 of ${STEPS.length}</div>
+    <div class="ctitle">Project Location</div>
+    <div class="cdesc">Click on the map or search by city name to locate the project site. Confirm before proceeding.</div>
+  </div>
+  <div class="cbody">
+    <div class="map-search">
+      <input type="text" id="mapSearch" placeholder="Search city, address or coordinates…" onkeydown="if(event.key==='Enter')searchLoc()"/>
+      <button onclick="searchLoc()">🔍 Search</button>
+    </div>
+    <p class="map-hint">Or click directly on the map to drop a pin at the project location.</p>
+    <div class="map-wrap"><div id="map"></div></div>
+    <div class="map-pin-info" id="pinInfo">
+      📍 <strong id="pinCoords"></strong><br>
+      <span id="pinAddress" style="color:var(--muted);font-size:12px">Resolving address…</span>
+    </div>
+    <button class="btn-confirm-loc" id="btnConfirmLoc" onclick="confirmLoc()" disabled>✓ Confirm this location</button>
+  </div></div>`;
+}
+
+function initMap(){
+  if(_map)return;
+  // initialise centrée sur Amérique du Nord
+  _map=L.map('map',{zoomControl:true}).setView([46,-73],4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19
+  }).addTo(_map);
+  _map.on('click',function(e){dropPin(e.latlng.lat,e.latlng.lng);});
+}
+
+function dropPin(lat,lng){
+  _pendingLat=lat;_pendingLng=lng;
+  if(_marker)_marker.remove();
+  _marker=L.marker([lat,lng],{draggable:true}).addTo(_map);
+  _marker.on('dragend',function(e){
+    const p=e.target.getLatLng();dropPin(p.lat,p.lng);
+  });
+  _map.setView([lat,lng],12);
+  const pi=document.getElementById('pinInfo');
+  const pc=document.getElementById('pinCoords');
+  const pa=document.getElementById('pinAddress');
+  if(pi&&pc&&pa){
+    pi.classList.add('vis');
+    pc.textContent=`Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+    pa.textContent='Resolving address…';
+    document.getElementById('btnConfirmLoc').disabled=false;
+    // reverse geocode via Nominatim
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+      .then(r=>r.json())
+      .then(d=>{
+        const addr=d.display_name||'Address not found';
+        pa.textContent=addr;
+        _pendingAddress=addr;
+      }).catch(()=>{pa.textContent='Address not available';});
+  }
+}
+
+let _pendingAddress='';
+
+function searchLoc(){
+  const q=document.getElementById('mapSearch').value.trim();
+  if(!q)return;
+  fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`)
+    .then(r=>r.json())
+    .then(d=>{
+      if(d&&d.length>0){
+        const r=d[0];
+        dropPin(parseFloat(r.lat),parseFloat(r.lon));
+      } else {
+        alert('Location not found. Try a different search term.');
+      }
+    }).catch(()=>alert('Search error. Check your connection.'));
+}
+
+function confirmLoc(){
+  if(_pendingLat===null)return;
+  locD={lat:_pendingLat,lng:_pendingLng,hint:'',address:_pendingAddress};
+  // derive jurisdiction hint from address
+  const addr=_pendingAddress.toLowerCase();
+  if(addr.includes('québec')||addr.includes('quebec'))locD.hint='Québec, Canada';
+  else if(addr.includes('ontario'))locD.hint='Ontario, Canada';
+  else if(addr.includes('british columbia'))locD.hint='British Columbia, Canada';
+  else if(addr.includes('alberta'))locD.hint='Alberta, Canada';
+  else if(addr.includes('canada'))locD.hint='Canada';
+  else if(addr.includes('united states')||addr.includes('usa'))locD.hint='United States';
+  else if(addr.includes('france'))locD.hint='France';
+  locOk=true;
+  ans['location_gps']=locD;
+  _map=null;_marker=null;_pendingLat=null;_pendingLng=null;_pendingAddress='';
+  rStep();
+}
+
+function resetLoc(){
+  locOk=false;locD={lat:null,lng:null,hint:'',address:''};
+  delete ans['location_gps'];
+  _map=null;_marker=null;_pendingLat=null;_pendingLng=null;_pendingAddress='';
+  rStep();
+}
 
 // ── VALIDATION ───────────────────────────────────────────────
 function validate(){
@@ -514,6 +656,7 @@ function submit(){
     <div class="rs"><h3>📍 Location</h3>
       <div class="rrow"><span class="rk">GPS</span><span class="rv">${T(ans['location_gps'])}</span></div>
       ${locD.hint?`<div class="rrow"><span class="rk">Jurisdiction hint</span><span class="rv"><span class="t">${locD.hint}</span></span></div>`:''}
+      ${locD.address?`<div class="rrow"><span class="rk">Address (Nominatim)</span><span class="rv" style="font-size:12px">${locD.address}</span></div>`:''}
     </div>
     <div class="rs"><h3>🏗️ Project</h3>
       <div class="rrow"><span class="rk">Promoter type</span><span class="rv">${T(cls.project.promoter_type)}</span></div>
@@ -575,5 +718,6 @@ function restart(){
 
 rSlabs();rStep();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </body>
 </html>
